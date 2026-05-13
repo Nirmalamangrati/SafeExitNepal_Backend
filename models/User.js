@@ -1,9 +1,11 @@
 const mongoose = require("mongoose");
-const UserSchema = new mongoose.Schema(
-  {
-    contact: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-  },
-  { timestamps: true },
-);
-module.exports = mongoose.model("User", UserSchema);
+
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  otp: { type: String },
+  otpExpires: { type: Date },
+  isVerified: { type: Boolean, default: false },
+});
+
+module.exports = mongoose.model("User", userSchema);
