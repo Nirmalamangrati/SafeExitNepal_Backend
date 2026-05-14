@@ -8,7 +8,14 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     gender: { type: String, default: "Male" },
     dob: { type: String, default: "" },
-
+    otp: {
+      type: String,
+      default: undefined,
+    },
+    otpExpires: {
+      type: Date,
+      default: undefined,
+    },
     // Array of objects for dynamic emergency contacts
     emergencyContacts: [
       {

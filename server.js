@@ -60,7 +60,7 @@ mongoose
   )
   .catch((err) => {
     console.log(
-      "⚠️ Connection Error on fresh URI, fallback to original connection string...",
+      " Connection Error on fresh URI, fallback to original connection string...",
     );
     mongoose
       .connect(dbURI)
@@ -74,7 +74,6 @@ mongoose
 
 // 4. SERVER LISTEN PORT CONFIGURATION
 const PORT = process.env.PORT || 8000;
-
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://192.168.43.132:${PORT}`);
   console.log(`Server is also listening on local network via 0.0.0.0:${PORT}`);

@@ -45,7 +45,6 @@ const signupPasswordRegex =
 
 router.post("/send-otp", loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
-
   if (!email || !password) {
     return res
       .status(400)
@@ -56,7 +55,11 @@ router.post("/send-otp", loginRateLimiter, async (req, res) => {
     const cleanContact = email.trim().toLowerCase();
 
     const user = await User.findOne({
-      $or: [{ email: cleanContact }, { phone: email.trim() }],
+      $or: [
+        { email: cleanContact },
+        { phone: cleanContact },
+        { phone: email.trim() },
+      ],
     });
 
     if (!user) {
@@ -71,7 +74,7 @@ router.post("/send-otp", loginRateLimiter, async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     user.otp = otp;
-    user.otpExpires = Date.now() + 300000;
+    user.otpExpires = Date.now() + 120000;
     await user.save();
 
     console.log(`➔ [BACKEND LOG] Generated OTP for ${user.fullName}: ${otp}`);
@@ -89,7 +92,7 @@ router.post("/send-otp", loginRateLimiter, async (req, res) => {
         .status(200)
         .json({ message: "OTP sent successfully to your email!" });
     } else {
-      const formattedPhone = user.phone.startsWith("+")
+      const formattedPhone = user.phone.startsWith("+977")
         ? user.phone
         : `+977${user.phone}`;
 
@@ -118,9 +121,11 @@ router.post("/send-otp", loginRateLimiter, async (req, res) => {
   }
 });
 //  VERIFY OTP & INSTANTIATE SESSION (JWT)
-
 router.post("/verify-otp", async (req, res) => {
   const { email, otp } = req.body;
+  console.log(
+    `➔ [VERIFY OTP REQUEST] Contact: ${email}, Received OTP: ${otp} (Type: ${typeof otp})`,
+  );
 
   if (!email || !otp) {
     return res.status(400).json({ error: "Contact and OTP are required." });
@@ -128,45 +133,149 @@ router.post("/verify-otp", async (req, res) => {
 
   try {
     const cleanContact = email.trim().toLowerCase();
+
     const user = await User.findOne({
-      $or: [{ email: cleanContact }, { phone: email.trim() }],
+      $or: [
+        { email: cleanContact },
+        { phone: cleanContact },
+        { phone: email.trim() },
+      ],
     });
-
-    if (!user) {
-      return res.status(404).json({ error: "User profile not found." });
+    if (!user.otp || Date.now() > new Date(user.otpExpires).getTime()) {
+      console.log(` [VERIFY ERROR] OTP code expired or missing.`);
+      return res
+        .status(400)
+        .json({ error: "OTP code has expired. Please request a new one." });
     }
+    console.log(
+      `➔ [DB DATA] Saved OTP: ${user.otp}, Expires At: ${user.otpExpires}, Current Time: ${Date.now()}`,
+    );
 
-    if (!user.otp || Date.now() > user.otpExpires) {
+    // check time expire
+    if (!user.otp || Date.now() > new Date(user.otpExpires).getTime()) {
+      console.log(`[VERIFY ERROR] OTP code expired or missing.`);
       return res
         .status(400)
         .json({ error: "OTP code has expired. Please request a new one." });
     }
 
-    if (user.otp !== otp) {
+    if (user.otp.toString() !== otp.toString()) {
+      console.log(
+        ` [VERIFY ERROR] Mismatch! DB OTP: ${user.otp} vs Input OTP: ${otp}`,
+      );
       return res.status(400).json({ error: "Incorrect verification code." });
     }
 
+    // token generate
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       JWT_SECRET,
       { expiresIn: "7d" },
     );
 
+    // old opt clear
     user.otp = undefined;
     user.otpExpires = undefined;
     await user.save();
 
+    console.log(
+      `[VERIFY SUCCESS] User ${user.fullName} verified successfully.`,
+    );
+
     return res.status(200).json({
       message: "Login verified successfully!",
       token,
-      user: { fullName: user.fullName, email: user.email, phone: user.phone },
+      user: {
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender,
+        dob: user.dob,
+        bloodGroup: user.safetyInfo?.bloodGroup || "Not Specified",
+        medicalConditions: user.safetyInfo?.medicalConditions || "None",
+        allergies: user.safetyInfo?.allergies || "None",
+        address: user.safetyInfo?.address || "Not Provided",
+        hospital: user.safetyInfo?.hospital || "Not Provided",
+        emergencyContacts: user.emergencyContacts || [],
+        permissions: user.permissions || {},
+      },
     });
   } catch (error) {
     console.error(" [VERIFY OTP ERROR]:", error);
     return res.status(500).json({ error: "Server error during verification." });
   }
 });
+//Resent OTP
+router.post("/resend-otp", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Contact info is required." });
+  }
 
+  try {
+    const cleanContact = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+      $or: [
+        { email: cleanContact },
+        { phone: cleanContact },
+        { phone: email.trim() },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User profile not found." });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.otp = otp;
+    user.otpExpires = Date.now() + 120000; // २ मिनेटको म्याद
+    await user.save();
+
+    console.log(`➔ [BACKEND LOG] Resent OTP for ${user.fullName}: ${otp}`);
+
+    const isEmailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (isEmailFormat.test(cleanContact)) {
+      await transporter.sendMail({
+        from: '"SafeExit Nepal" <noreply@safeexit.com>',
+        to: user.email,
+        subject: "Your New Login Verification Code",
+        text: `Your new verification code is: ${otp}. It will expire in 2 minutes.`,
+      });
+      return res
+        .status(200)
+        .json({ message: "New OTP sent successfully to your email!" });
+    } else {
+      const formattedPhone = user.phone.startsWith("+977")
+        ? user.phone
+        : `+977${user.phone}`;
+
+      if (twilioClient) {
+        await twilioClient.messages.create({
+          body: `SafeExit Nepal: Your new verification code is ${otp}. Valid for 2 mins.`,
+          to: formattedPhone,
+          from: process.env.TWILIO_PHONE_NUMBER,
+        });
+        return res
+          .status(200)
+          .json({ message: "Real OTP SMS has been resent to your phone!" });
+      } else {
+        console.log(
+          ` [TEST MODE] Twilio missing. Simulated Resend OTP Code: ${otp}`,
+        );
+        return res.status(200).json({
+          message: `[TEST MODE] Real SMS gateway not set. Your new OTP code is ${otp}`,
+          otp,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Backend Resend OTP Error:", error);
+    res.status(500).json({ error: "Internal server error during OTP resend." });
+  }
+});
 //  SIGNUP ROUTE
 
 router.post("/signup", signupRateLimiter, async (req, res) => {
@@ -197,8 +306,10 @@ router.post("/signup", signupRateLimiter, async (req, res) => {
 
   try {
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.trim();
+    const cleanFullName = fullName.trim();
     const userExists = await User.findOne({
-      $or: [{ email: cleanEmail }, { phone: phone.trim() }],
+      $or: [{ email: cleanEmail }, { phone: cleanPhone }],
     });
     if (userExists) {
       return res
@@ -210,8 +321,8 @@ router.post("/signup", signupRateLimiter, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const newUser = new User({
-      fullName,
-      phone: phone.trim(),
+      fullName: cleanFullName,
+      phone: cleanPhone,
       email: cleanEmail,
       password: hashedPassword,
       gender,
