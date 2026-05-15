@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
-
+const User = require("./models/User");
 const app = express();
 
 app.use(cors());
@@ -10,7 +10,8 @@ app.use(express.json());
 
 // 1. ROUTES CONNECTION
 app.use("/api/auth", require("./routes/authRoutes"));
-
+//profile
+app.use("/api/profile", require("./routes/profile"));
 app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running...");
 });
@@ -55,9 +56,7 @@ if (dbURI) {
 // 3. SINGLE MONGOOSE CONNECTION (WITH FALLBACK GUARD)
 mongoose
   .connect(cleanURI)
-  .then(() =>
-    console.log(" MongoDB Atlas (Fresh Database) Connected Successfully!"),
-  )
+  .then(() => console.log(" MongoDB Atlas  Connected Successfully!"))
   .catch((err) => {
     console.log(
       " Connection Error on fresh URI, fallback to original connection string...",
