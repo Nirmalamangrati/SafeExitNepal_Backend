@@ -4,10 +4,15 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const User = require("./models/User");
 const app = express();
-
+const admin = require("firebase-admin");
+const serviceAccount = require("./safeexit-firebase-key.json");
 app.use(cors());
 app.use(express.json());
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
+console.log("Firebase Admin SDK Successfully Initialized!");
 // 1. ROUTES CONNECTION
 app.use("/api/auth", require("./routes/authRoutes"));
 //profile
@@ -16,6 +21,9 @@ app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running...");
 });
 
+app.get("/", (req, res) => {
+  res.send("SafeExitNepal Backend Running with Real-time SOS Engine...");
+});
 // 2. DATABASE CONFIGURATION (SAFE URL EXTRACTOR)
 const dbURI = process.env.MONGO_URI || process.env.MONGODB_URI;
 let cleanURI = dbURI;
