@@ -5,6 +5,9 @@ require("dotenv").config();
 const User = require("./models/User");
 const app = express();
 const admin = require("firebase-admin");
+const incidentReportRoutes = require("./routes/incidentreport");
+const sosRoutes = require("./routes/sosRoutes");
+const profileRoutes = require("./routes/profile");
 const serviceAccount = require("./safeexit-firebase-key.json");
 app.use(cors());
 app.use(express.json());
@@ -60,7 +63,21 @@ if (dbURI) {
     cleanURI = dbURI;
   }
 }
+//incident report
+app.post("/api/incidents", async (req, res) => {
+  try {
+    const newIncident = new Incident(req.body);
+    await newIncident.save();
 
+    // Run clustering algorithm by passing your server's 'io' instance
+    runClusteringAndDetection(io);
+
+    io.emit("admin-new-incident", newIncident);
+    res.status(201).json({ success: true, data: newIncident });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // 3. SINGLE MONGOOSE CONNECTION (WITH FALLBACK GUARD)
 mongoose
   .connect(cleanURI)

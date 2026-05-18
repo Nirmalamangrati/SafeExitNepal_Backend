@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
-const SOSEvent = require("../models/SOSEvent");
+const SOSEvent = require("../models/sosRoutes");
 const axios = require("axios");
 const admin = require("firebase-admin");
 
@@ -11,7 +11,7 @@ const activeAlerts = new Map();
 //  ROUTES: /api/sos/trigger
 router.post("/trigger", async (req, res) => {
   try {
-    const { userId, location } = req.body; // फ्रन्टइन्डबाट आउने डाटा
+    const { userId, location } = req.body;
 
     const newEvent = new SOSEvent({ userId, location, status: "PENDING" });
     await newEvent.save();
