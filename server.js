@@ -18,6 +18,9 @@ admin.initializeApp({
 console.log("Firebase Admin SDK Successfully Initialized!");
 // 1. ROUTES CONNECTION
 app.use("/api/auth", require("./routes/authRoutes"));
+//multer
+app.use("/uploads", express.static("uploads"));
+
 //profile
 app.use("/api/profile", require("./routes/profile"));
 app.get("/", (req, res) => {

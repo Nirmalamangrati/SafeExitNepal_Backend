@@ -1,11 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const Incident = require("../models/Incident");
+const Incident = require("../models/incident");
+
 const { kmeans } = require("ml-kmeans");
+const multer = require("multer");
+const path = require("path");
 
-const REPORT_THRESHOLD = 5; // ५ वटा रिपोर्ट पुगेपछि कडा साइरन बज्ने
+const REPORT_THRESHOLD = 5;
 
-// 🧠 K-Means Clustering & Threshold Detection Function
+// Multer Storage Configuration
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// K-Means Clustering & Threshold Detection Function
 async function runClusteringAndDetection(io) {
   try {
     const recentIncidents = await Incident.find({
@@ -31,10 +46,10 @@ async function runClusteringAndDetection(io) {
         const center = ans.centroids[index];
         io.emit("high-density-crisis", {
           clusterId: index,
-          latitude: center[0],
-          longitude: center[1],
+          latitude: center,
+          longitude: center,
           totalReports: clusterReports.length,
-          message: `🚨 चेतावनी: यो क्षेत्रमा छोटो समयमै ${clusterReports.length} वटा विपद्का रिपोर्टहरू दर्ता भएका छन्!`,
+          message: `🚨 Warning: ${clusterReports.length} incidents have been reported in this area recently!`,
         });
       }
     });
@@ -44,25 +59,49 @@ async function runClusteringAndDetection(io) {
 }
 
 module.exports = (io) => {
-  // 🚨 १. मोबाइल एपबाट नयाँ रिपोर्ट पोस्ट गर्ने बाटो
-  router.post("/", async (req, res) => {
+  // 1. Post a new incident report from mobile app
+  router.post("/", upload.single("file"), async (req, res) => {
     try {
-      const newIncident = new Incident(req.body);
+      // Map FormData fields from React Native
+      const incidentData = {
+        incidentCategory: req.body.incidentCategory,
+        incidentType: req.body.incidentType,
+        incidentDate: req.body.incidentDate,
+        locationName: req.body.locationName,
+        latitude: parseFloat(req.body.latitude),
+        longitude: parseFloat(req.body.longitude),
+        description: req.body.description,
+        // Parse JSON strings to objects
+        suspectInfo: req.body.suspectInfo
+          ? JSON.parse(req.body.suspectInfo)
+          : {},
+        reporterInfo: req.body.reporterInfo
+          ? JSON.parse(req.body.reporterInfo)
+          : {},
+      };
+
+      // Store file path in database if file is uploaded
+      if (req.file) {
+        incidentData.attachedFilePath = req.file.path;
+      }
+
+      const newIncident = new Incident(incidentData);
       await newIncident.save();
 
-      // ब्याकइन्डमा क्लस्टरिङ अल्गोरिदम चलाउने
+      // Trigger clustering detection
       runClusteringAndDetection(io);
 
-      // एडमिनलाई लाइभ पठाउने
+      // Send live notification to admin panel
       io.emit("admin-new-incident", newIncident);
 
       res.status(201).json({ success: true, data: newIncident });
     } catch (error) {
+      console.error("Post Error:", error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
 
-  // 📑 २. स्वीकृत (Approved) भएका मात्र Incident Tab मा देखाउनका लागि तानेर ल्याउने बाटो
+  // 2. Fetch approved incidents for Incident Tab
   router.get("/approved", async (req, res) => {
     try {
       const approvedList = await Incident.find({ status: "approved" }).sort({
@@ -74,7 +113,7 @@ module.exports = (io) => {
     }
   });
 
-  // 📊 ३. होम स्क्रिनका लागि काउन्टर संख्या गणना गर्ने बाटो
+  // 3. Count incidents for home screen categories
   router.get("/counts", async (req, res) => {
     try {
       const critical = await Incident.countDocuments({
