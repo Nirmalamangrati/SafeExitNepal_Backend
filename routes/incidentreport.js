@@ -20,14 +20,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// K-Means Clustering & Threshold Detection Function
+// K-Means Clustering & Threshold Detection Function (FIXED)
 async function runClusteringAndDetection(io) {
   try {
     const recentIncidents = await Incident.find({
       createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     });
 
-    if (recentIncidents.length < 3) return;
+    if (!recentIncidents || recentIncidents.length < 3) return;
 
     const dataPoints = recentIncidents.map((inc) => [
       inc.latitude,
@@ -43,11 +43,12 @@ async function runClusteringAndDetection(io) {
 
     clusters.forEach((clusterReports, index) => {
       if (clusterReports.length >= REPORT_THRESHOLD) {
-        const center = ans.centroids[index];
+        const center = ans.centroids[index]; // center framework: [lat, lng]
+
         io.emit("high-density-crisis", {
           clusterId: index,
-          latitude: center,
-          longitude: center,
+          latitude: center[0], //  Correct: Centroid array zero-index Latitude pulling
+          longitude: center[1], //  Correct: Centroid array first-index Longitude pulling
           totalReports: clusterReports.length,
           message: `🚨 Warning: ${clusterReports.length} incidents have been reported in this area recently!`,
         });
@@ -71,7 +72,7 @@ module.exports = (io) => {
         latitude: parseFloat(req.body.latitude),
         longitude: parseFloat(req.body.longitude),
         description: req.body.description,
-        // Parse JSON strings to objects
+        // Parse JSON strings to objects safely
         suspectInfo: req.body.suspectInfo
           ? JSON.parse(req.body.suspectInfo)
           : {},
@@ -88,7 +89,7 @@ module.exports = (io) => {
       const newIncident = new Incident(incidentData);
       await newIncident.save();
 
-      // Trigger clustering detection
+      // Trigger clustering detection safely
       runClusteringAndDetection(io);
 
       // Send live notification to admin panel
