@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router();
+const router = (reportFilterRouter = express.Router());
 const Incident = require("../models/incident");
 
 const { kmeans } = require("ml-kmeans");
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// K-Means Clustering & Threshold Detection Function (FIXED)
+// K-Means Clustering & Threshold Detection Function
 async function runClusteringAndDetection(io) {
   try {
     const recentIncidents = await Incident.find({
@@ -43,12 +43,12 @@ async function runClusteringAndDetection(io) {
 
     clusters.forEach((clusterReports, index) => {
       if (clusterReports.length >= REPORT_THRESHOLD) {
-        const center = ans.centroids[index]; // center framework: [lat, lng]
+        const center = ans.centroids[index];
 
         io.emit("high-density-crisis", {
           clusterId: index,
-          latitude: center[0], //  Correct: Centroid array zero-index Latitude pulling
-          longitude: center[1], //  Correct: Centroid array first-index Longitude pulling
+          latitude: center[0],
+          longitude: center[1],
           totalReports: clusterReports.length,
           message: `🚨 Warning: ${clusterReports.length} incidents have been reported in this area recently!`,
         });
@@ -60,10 +60,83 @@ async function runClusteringAndDetection(io) {
 }
 
 module.exports = (io) => {
-  // 1. Post a new incident report from mobile app
+  // 1. REFRESH LOGIC: Admin panel refresh huda sabai incidents list pathaune GET API
+  router.get("/", async (req, res) => {
+    try {
+      const allIncidents = await Incident.find().sort({ createdAt: -1 });
+      res.json(allIncidents);
+    } catch (error) {
+      console.error("Fetch All Error:", error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // 2. PATCH
+  router.patch("/:id/status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const updatedIncident = await Incident.findByIdAndUpdate(
+        id,
+        { status: status },
+        { new: true },
+      );
+
+      if (!updatedIncident) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Incident not found in database." });
+      }
+
+      io.emit("admin-incident-status-updated", updatedIncident);
+
+      res.json({ success: true, data: updatedIncident });
+    } catch (error) {
+      console.error("Status Update Error:", error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // 3. Post a new incident report from mobile app
   router.post("/", upload.single("file"), async (req, res) => {
     try {
-      // Map FormData fields from React Native
+      // mobile bata aako reporterInfo & incidentType safely store garne
+      let reporterName = "Anonymous";
+      try {
+        if (req.body.reporterInfo) {
+          const parsedReporter = JSON.parse(req.body.reporterInfo);
+          reporterName = parsedReporter.yourName || "Anonymous";
+        }
+      } catch (pErr) {
+        console.warn("Reporter Info parse warning:", pErr);
+      }
+
+      const incidentType =
+        req.body.incidentType || req.body.incidentCategory || "GENERAL";
+
+      // 15 min vitra eautae user le report gare nagareko check garne
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+      const isDuplicate = await Incident.findOne({
+        "reporterInfo.yourName": reporterName,
+        incidentType: incidentType,
+        createdAt: { $gte: fifteenMinutesAgo },
+      });
+
+      // yadi duplicati report vetiyema database save nagarne ra sidhai rokne
+
+      if (isDuplicate) {
+        console.log(
+          `⚠️ [SPAM BLOCKED] Duplicate ${incidentType} alert prevented from user: ${reporterName}`,
+        );
+        return res.status(400).json({
+          success: false,
+          message:
+            " You have already reported this incident recently. Our rescue teams are actively reviewing it!",
+        });
+      }
+
+      // duplicate navayemaa matrae database object banaune
       const incidentData = {
         incidentCategory: req.body.incidentCategory,
         incidentType: req.body.incidentType,
@@ -72,7 +145,7 @@ module.exports = (io) => {
         latitude: parseFloat(req.body.latitude),
         longitude: parseFloat(req.body.longitude),
         description: req.body.description,
-        // Parse JSON strings to objects safely
+        status: "PENDING",
         suspectInfo: req.body.suspectInfo
           ? JSON.parse(req.body.suspectInfo)
           : {},
@@ -81,7 +154,6 @@ module.exports = (io) => {
           : {},
       };
 
-      // Store file path in database if file is uploaded
       if (req.file) {
         incidentData.attachedFilePath = req.file.path;
       }
@@ -89,7 +161,6 @@ module.exports = (io) => {
       const newIncident = new Incident(incidentData);
       await newIncident.save();
 
-      // Trigger clustering detection safely
       runClusteringAndDetection(io);
 
       // Send live notification to admin panel
@@ -102,10 +173,10 @@ module.exports = (io) => {
     }
   });
 
-  // 2. Fetch approved incidents for Incident Tab
+  // 4. Fetch approved incidents for Incident Tab
   router.get("/approved", async (req, res) => {
     try {
-      const approvedList = await Incident.find({ status: "approved" }).sort({
+      const approvedList = await Incident.find({ status: "APPROVED" }).sort({
         createdAt: -1,
       });
       res.json(approvedList);
@@ -114,31 +185,29 @@ module.exports = (io) => {
     }
   });
 
-  // 3. Count incidents for home screen categories
+  // 5. Count incidents for home screen categories
   router.get("/counts", async (req, res) => {
     try {
       const critical = await Incident.countDocuments({
         incidentCategory: "critical",
-        status: "approved",
+        status: "APPROVED",
       });
       const high = await Incident.countDocuments({
         incidentCategory: "high",
-        status: "approved",
+        status: "APPROVED",
       });
       const medium = await Incident.countDocuments({
         incidentCategory: "medium",
-        status: "approved",
+        status: "APPROVED",
       });
       const low = await Incident.countDocuments({
         incidentCategory: "low",
-        status: "approved",
+        status: "APPROVED",
       });
-
       res.json({ critical, high, medium, low });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
-
   return router;
 };

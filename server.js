@@ -2,15 +2,22 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
+const http = require("http");
+const { Server } = require("socket.io");
 const User = require("./models/User");
 const app = express();
 const admin = require("firebase-admin");
 const path = require("path");
 
-// Native dependencies definitions
 const serviceAccount = require("./safeexit-firebase-key.json");
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 admin.initializeApp({
@@ -19,27 +26,41 @@ admin.initializeApp({
 
 console.log("Firebase Admin SDK Successfully Initialized!");
 
-// Socket Mock layer check for fallback integration safety
-const ioMock = {
-  emit: (event, data) =>
-    console.log(`[Socket.io Fallback] Emit event: ${event}`),
-};
-const io = global.io || ioMock;
+// Initialize Native HTTP Server and Socket.io with proper CORS configurations
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  },
+});
 
-// 1. ROUTES CONNECTION
+// Store socket instance globally inside Express engine
+app.set("io", io);
+
+// Network Telemetry Logs for Socket Connection Status
+io.on("connection", (socket) => {
+  console.log(` New Device Connected via Socket: ${socket.id}`);
+  socket.on("disconnect", () => {
+    console.log(` Device Disconnected from Socket: ${socket.id}`);
+  });
+});
+
+// App Router Declarations
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/uploads", express.static("uploads"));
 app.use("/api/profile", require("./routes/profile"));
 
-// 🌟 INTEGRATION FIXED: Timro inner router module code wrap framework bypass map execution
+// Core Real-time Routers passing socket.io interface
 const incidentRouter = require("./routes/incidentreport")(io);
 app.use("/api/incidents", incidentRouter);
 
+app.use("/api/sos", require("./routes/sosRoutes"));
 app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running with Real-time SOS Engine...");
 });
 
-// 2. DATABASE CONFIGURATION (SAFE URL EXTRACTOR)
+// Database URL Sanitizer Configuration Layer
 const dbURI = process.env.MONGO_URI || process.env.MONGODB_URI;
 let cleanURI = dbURI;
 
@@ -76,7 +97,7 @@ if (dbURI) {
   }
 }
 
-// 3. SINGLE MONGOOSE CONNECTION (WITH FALLBACK GUARD)
+// Single Instance MongoDB Connection Blueprint
 mongoose
   .connect(cleanURI)
   .then(() => console.log(" MongoDB Atlas Connected Successfully!"))
@@ -94,9 +115,9 @@ mongoose
       );
   });
 
-// 4. SERVER LISTEN PORT CONFIGURATION
+// Native Server Network Listener Hook (Using http.server instead of app.listen)
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://192.168.43.132:${PORT}`);
   console.log(`Server is also listening on local network via 0.0.0.0:${PORT}`);
 });

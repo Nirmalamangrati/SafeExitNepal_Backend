@@ -1,4 +1,3 @@
-// routes/sosRoutes.js
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
@@ -8,7 +7,7 @@ const admin = require("firebase-admin");
 
 const activeAlerts = new Map();
 
-//  ROUTES: /api/sos/trigger
+// ROUTE: POST /api/sos/trigger
 router.post("/trigger", async (req, res) => {
   try {
     const { userId, location } = req.body;
@@ -30,11 +29,11 @@ router.post("/trigger", async (req, res) => {
       .map((u) => u.fcmToken)
       .filter((token) => token && token !== "");
 
-    //  firebase BaaS through contact list maa vakolai Push Notification pathaune
+    // Firebase Cloud Messaging BaaS notification delivery loop
     if (fcmTokens.length > 0) {
       const messagePayload = {
         notification: {
-          title: ` EMERGENCY: ${user.name} is in danger!`,
+          title: `⚠️ EMERGENCY: ${user.name} is in danger!`,
           body: "Your emergency contacts have been sent an alarm notification. If no one responds within 30 seconds, the Nepal Police and admin will be automatically alerted.",
         },
         android: {
@@ -55,20 +54,21 @@ router.post("/trigger", async (req, res) => {
       await admin.messaging().sendEachForMulticast(messagePayload);
     }
 
-    //active alert map halne
+    // Register tracking item into local runtime memory allocation table
     activeAlerts.set(newEvent._id.toString(), {
       event: newEvent,
       user: user,
       isReceived: false,
     });
 
-    //
+    // 30 Seconds Automated System Escalation Worker
     setTimeout(async () => {
       const liveAlert = activeAlerts.get(newEvent._id.toString());
       if (liveAlert && !liveAlert.isReceived) {
         console.log(
           `[ESCALATION] 30s Timeout! ${newEvent._id} routing to Police & Admin.`,
         );
+
         await axios
           .post("https://nepalpolice.gov.np", {
             source: "SafeExit Nepal Automated System",
@@ -81,12 +81,21 @@ router.post("/trigger", async (req, res) => {
               "Nepal Police Emergency Node Dispatched via simulated link.",
             ),
           );
-        req.io.emit("ADMIN_SOS_ALERT", {
-          eventId: newEvent._id,
-          victim: liveAlert.user.name,
-          location: location,
-          status: "ESCALATED_TO_POLICE",
-        });
+
+        // 🚨 CRITICAL FIX: Extract socket server via express global app configuration context instead of req.io
+        const io = req.app.get("io");
+        if (io) {
+          io.emit("ADMIN_SOS_ALERT", {
+            eventId: newEvent._id,
+            victim: liveAlert.user.name,
+            location: location,
+            status: "ESCALATED_TO_POLICE",
+          });
+          console.log(
+            `📡 [Socket.io] Escalated SOS alert broadcasted to Admin: ${newEvent._id}`,
+          );
+        }
+
         await SOSEvent.findByIdAndUpdate(newEvent._id, {
           status: "ESCALATED_TO_POLICE",
         });
@@ -100,11 +109,12 @@ router.post("/trigger", async (req, res) => {
       eventId: newEvent._id,
     });
   } catch (error) {
+    console.error("SOS Trigger Route Handler Error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-//  ROUTES: /api/sos/acknowledge
+// ROUTE: POST /api/sos/acknowledge
 router.post("/acknowledge", async (req, res) => {
   const { eventId } = req.body;
   if (activeAlerts.has(eventId)) {
