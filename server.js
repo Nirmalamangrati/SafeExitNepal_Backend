@@ -19,7 +19,6 @@ app.use(
   }),
 );
 app.use(express.json());
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -34,7 +33,6 @@ const io = new Server(server, {
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   },
 });
-
 // Store socket instance globally inside Express engine
 app.set("io", io);
 

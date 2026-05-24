@@ -29,6 +29,106 @@ const loginRateLimiter = rateLimit({
     error: "Too many login attempts. Please try again after 15 minutes.",
   },
 });
+//signup
+function getLevenshteinDistance(str1, str2) {
+  const track = Array(str2.length + 1)
+    .fill(null)
+    .map(() => Array(str1.length + 1).fill(null));
+  for (let i = 0; i <= str1.length; i += 1) track[0][i] = i;
+  for (let j = 0; j <= str2.length; j += 1) track[j][0] = j;
+  for (let j = 1; j <= str2.length; j += 1) {
+    for (let i = 1; i <= str1.length; i += 1) {
+      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      track[j][i] = Math.min(
+        track[j][i - 1] + 1, // Deletion
+        track[j - 1][i] + 1, // Insertion
+        track[j - 1][i - 1] + indicator, // Substitution
+      );
+    }
+  }
+  return track[str2.length][str1.length];
+}
+
+// SIGNUP ROUTE
+router.post("/signup", async (req, res) => {
+  try {
+    const { fullName, email, phone, password } = req.body;
+
+    if (!fullName || !email || !phone || !password) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanName = fullName.toLowerCase().trim();
+    const cleanPassword = password.trim();
+
+    // 1️ OPTIMIZED REGEX SEARCH ALGORITHM (Validations)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const nepalPhoneRegex = /^(?:\+977[- ]?)?9[678]\d{8}$/; // nepalko mobile number filter algorithms
+
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({ error: "Invalid email format structure." });
+    }
+    if (!nepalPhoneRegex.test(phone.trim())) {
+      return res
+        .status(400)
+        .json({ error: "Invalid Nepali phone number sequence." });
+    }
+    if (cleanPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 8 characters long." });
+    }
+
+    // LEVENSHTEIN DISTANCE CHECK (Password Security Algorithm)
+    // If the password is too similar to the name (distance less than 4 characters), it will be rejected.
+    const distance = getLevenshteinDistance(cleanName, cleanPassword);
+    if (distance <= 4) {
+      return res.status(400).json({
+        error:
+          "Security Risk: Password is too similar to your name. Please use a unique phrase.",
+      });
+    }
+
+    //  INDEXED DATABASE LOOKUP ALGORITHM
+    const userExists = await User.findOne({
+      $or: [{ email: cleanEmail }, { phone: phone.trim() }],
+    });
+    if (userExists) {
+      return res.status(400).json({
+        error: "Identity conflict: Email or Phone already registered.",
+      });
+    }
+
+    //  CRYPTOGRAPHIC HASHING ALGORITHM (Password Protection)
+    //  bcrypt use, jasle Adaptive Key Salting Algorithm use garxa
+    const salt = await bcrypt.genSalt(12); // Work Factor
+    const hashedPassword = await bcrypt.hash(cleanPassword, salt);
+
+    // new user save garne
+    const newUser = new User({
+      fullName: fullName.trim(),
+      email: cleanEmail,
+      phone: phone.trim(),
+      password: hashedPassword,
+    });
+
+    await newUser.save();
+    console.log(
+      `➔ [ALGORITHMIC LOG] New Secure Node Registered for: ${fullName} (Levenshtein Distance: ${distance})`,
+    );
+
+    return res.status(201).json({
+      message: "Secure registration completed successfully!",
+      telemetry: { structuralDistance: distance },
+    });
+  } catch (error) {
+    console.error("Cryptographic Signup Failure:", error);
+    return res
+      .status(500)
+      .json({ error: "Internal algorithmic server breakdown." });
+  }
+});
 
 //  1. MAIN DISPATCH OTP ROUTE
 router.post("/send-otp", loginRateLimiter, async (req, res) => {
