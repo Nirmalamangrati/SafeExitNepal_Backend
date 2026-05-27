@@ -71,11 +71,15 @@ module.exports = (io) => {
     }
   });
 
-  // 2. PATCH
+  // 2. PATCH API for updating incident status from admin panel (PENDING → APPROVED/RESOLVED)
   router.patch("/:id/status", async (req, res) => {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      let { status } = req.body;
+
+      if (status && typeof status === "string") {
+        status = status.toUpperCase();
+      }
 
       const updatedIncident = await Incident.findByIdAndUpdate(
         id,
@@ -89,7 +93,9 @@ module.exports = (io) => {
           .json({ success: false, message: "Incident not found in database." });
       }
 
+      //socket live broadcasting for status update
       io.emit("admin-incident-status-updated", updatedIncident);
+      io.emit("incident-posted-public", updatedIncident);
 
       res.json({ success: true, data: updatedIncident });
     } catch (error) {
@@ -111,7 +117,6 @@ module.exports = (io) => {
       } catch (pErr) {
         console.warn("Reporter Info parse warning:", pErr);
       }
-
       const incidentType =
         req.body.incidentType || req.body.incidentCategory || "GENERAL";
 
@@ -176,12 +181,44 @@ module.exports = (io) => {
   // 4. Fetch approved incidents for Incident Tab
   router.get("/approved", async (req, res) => {
     try {
-      const approvedList = await Incident.find({ status: "APPROVED" }).sort({
+      const approvedList = await Incident.find({
+        status: { $regex: /^approved$/i },
+      }).sort({
         createdAt: -1,
       });
       res.json(approvedList);
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  });
+  //Delete an incident report (Admin Panel)
+  router.delete("/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Execute physical query cleanup on cluster
+      const deletedIncident = await Incident.findByIdAndDelete(id);
+
+      if (!deletedIncident) {
+        return res.status(404).json({
+          success: false,
+          message: "Incident record not found inside cluster database.",
+        });
+      }
+
+      // Capture express app application instance references for Socket.io
+      const io = req.app.get("socketio");
+      if (io) {
+        // Broadcast globally to all nodes (mobiles, other dashboard instances)
+        io.emit("incident-deleted-broadcast", id);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Incident deleted successfully from persistent storage.",
+      });
+    } catch (error) {
+      return res.status(500).json({ success: false, error: error.message });
     }
   });
 

@@ -18,15 +18,16 @@ router.put("/update/:userId", async (req, res) => {
   try {
     let user = null;
 
-    // 1. User find garne (ID bata ya Phone bata)
+    // 1. User check garne (Valid Mongoose ID ya Phone bata)
     if (mongoose.Types.ObjectId.isValid(userId)) {
       user = await User.findById(userId);
     }
+
+    // ID le bhetena tara query ma phone cha bhane search garne
     if (!user && phone) {
       user = await User.findOne({ phone: phone.trim() });
     }
 
-    // User bhettiyena bhane seedhai error dine (required fields nabhako le create garna mildaina)
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -34,7 +35,7 @@ router.put("/update/:userId", async (req, res) => {
       });
     }
 
-    // 2. Phone Change garna khojda unique check garne
+    // 2. Phone change check ra unique check
     if (phone && phone.trim() !== user.phone) {
       const trimmedPhone = phone.trim();
       const phoneExists = await User.findOne({
@@ -50,26 +51,30 @@ router.put("/update/:userId", async (req, res) => {
       user.phone = trimmedPhone;
     }
 
-    // 3. Dot Notation use garera exact fields matra update garne object banaune
-    // Yesle safetyInfo ka aru fields (allergies, medicalConditions) lai delete gardaina
+    // 3. Dot notation use garera explicit fields update object tayar parne
     const updateFields = {};
 
     if (fullName !== undefined) updateFields.fullName = fullName.trim();
     if (gender !== undefined) updateFields.gender = gender;
-    if (dob !== undefined) updateFields.dob = dob.trim();
+
+    // Khali string filter garera clear default halne taaki database ma "Not Provided" text direct save nahos
+    if (dob !== undefined) updateFields.dob = dob.trim() || "";
     if (phone !== undefined) updateFields.phone = phone.trim();
 
-    // Nested safetyInfo fields safe update
-    if (bloodGroup !== undefined)
-      updateFields["safetyInfo.bloodGroup"] = bloodGroup.trim();
-    if (address !== undefined)
-      updateFields["safetyInfo.address"] = address.trim();
+    // Mongoose Model nested format check (safely nested properties set garne)
+    if (bloodGroup !== undefined) {
+      updateFields["safetyInfo.bloodGroup"] =
+        bloodGroup.trim() || "Not Specified";
+    }
+    if (address !== undefined) {
+      updateFields["safetyInfo.address"] = address.trim() || "";
+    }
 
-    // Array field overwrite / update
-    if (emergencyContacts !== undefined)
+    if (emergencyContacts !== undefined) {
       updateFields.emergencyContacts = emergencyContacts;
+    }
 
-    // 4. Finally Database Update garne
+    // 4. Update executing with findByIdAndUpdate
     const updatedUser = await User.findByIdAndUpdate(
       user._id,
       { $set: updateFields },
