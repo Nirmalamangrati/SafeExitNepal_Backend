@@ -246,5 +246,24 @@ module.exports = (io) => {
       res.status(500).json({ error: error.message });
     }
   });
+  //manually trigger a new incident report (for testing purposes)
+  router.post("/incidents", async (req, res) => {
+    try {
+      console.log("BODY:", req.body);
+
+      const incident = await Incident.create(req.body);
+
+      io.emit("admin-new-incident", incident);
+
+      res.status(201).json(incident);
+    } catch (err) {
+      console.log("FULL ERROR:");
+      console.log(err);
+
+      res.status(500).json({
+        message: err.message,
+      });
+    }
+  });
   return router;
 };
