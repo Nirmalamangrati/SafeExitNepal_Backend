@@ -52,7 +52,18 @@ function getLevenshteinDistance(str1, str2) {
 // SIGNUP ROUTE
 router.post("/signup", async (req, res) => {
   try {
-    const { fullName, email, phone, password } = req.body;
+    const {
+      fullName,
+      email,
+      phone,
+      password,
+      gender,
+      dob,
+      emergencyContacts,
+      safetyInfo,
+      permissions,
+      fcmToken,
+    } = req.body;
 
     if (!fullName || !email || !phone || !password) {
       return res.status(400).json({ error: "All fields are required." });
@@ -111,6 +122,12 @@ router.post("/signup", async (req, res) => {
       email: cleanEmail,
       phone: phone.trim(),
       password: hashedPassword,
+      gender,
+      dob,
+      emergencyContacts,
+      safetyInfo,
+      permissions,
+      fcmToken,
     });
 
     await newUser.save();
