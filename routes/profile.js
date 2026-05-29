@@ -5,6 +5,7 @@ const User = require("../models/User");
 
 router.put("/update/:userId", async (req, res) => {
   const { userId } = req.params;
+
   const {
     fullName,
     phone,
@@ -18,12 +19,11 @@ router.put("/update/:userId", async (req, res) => {
   try {
     let user = null;
 
-    // 1. User check garne (Valid Mongoose ID ya Phone bata)
+    // Find user
     if (mongoose.Types.ObjectId.isValid(userId)) {
       user = await User.findById(userId);
     }
 
-    // ID le bhetena tara query ma phone cha bhane search garne
     if (!user && phone) {
       user = await User.findOne({ phone: phone.trim() });
     }
@@ -31,66 +31,56 @@ router.put("/update/:userId", async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found. Cannot update profile.",
+        message: "User not found",
       });
     }
 
-    // 2. Phone change check ra unique check
+    // Check duplicate phone
     if (phone && phone.trim() !== user.phone) {
-      const trimmedPhone = phone.trim();
-      const phoneExists = await User.findOne({
-        phone: trimmedPhone,
+      const existingPhone = await User.findOne({
+        phone: phone.trim(),
         _id: { $ne: user._id },
       });
-      if (phoneExists) {
+
+      if (existingPhone) {
         return res.status(400).json({
           success: false,
-          message: "This phone number is already registered by another user.",
+          message: "Phone already exists",
         });
       }
-      user.phone = trimmedPhone;
     }
 
-    // 3. Dot notation use garera explicit fields update object tayar parne
-    const updateFields = {};
+    // Update fields
+    user.fullName = fullName?.trim() || user.fullName;
+    user.phone = phone?.trim() || user.phone;
+    user.gender = gender || user.gender;
+    user.dob = dob || user.dob;
 
-    if (fullName !== undefined) updateFields.fullName = fullName.trim();
-    if (gender !== undefined) updateFields.gender = gender;
+    // safety info
+    user.safetyInfo = {
+      ...user.safetyInfo,
+      bloodGroup: bloodGroup || "Not Specified",
+      address: address || "",
+    };
 
-    // Khali string filter garera clear default halne taaki database ma "Not Provided" text direct save nahos
-    if (dob !== undefined) updateFields.dob = dob.trim() || "";
-    if (phone !== undefined) updateFields.phone = phone.trim();
-
-    // Mongoose Model nested format check (safely nested properties set garne)
-    if (bloodGroup !== undefined) {
-      updateFields["safetyInfo.bloodGroup"] =
-        bloodGroup.trim() || "Not Specified";
-    }
-    if (address !== undefined) {
-      updateFields["safetyInfo.address"] = address.trim() || "";
-    }
-
-    if (emergencyContacts !== undefined) {
-      updateFields.emergencyContacts = emergencyContacts;
+    // emergency contacts
+    if (emergencyContacts) {
+      user.emergencyContacts = emergencyContacts;
     }
 
-    // 4. Update executing with findByIdAndUpdate
-    const updatedUser = await User.findByIdAndUpdate(
-      user._id,
-      { $set: updateFields },
-      { new: true, runValidators: true },
-    );
+    await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "Profile updated successfully!",
-      user: updatedUser,
+      message: "Profile updated successfully",
+      user,
     });
   } catch (error) {
-    console.error("Update Profile Error:", error);
+    console.error("Update Error:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Server Error",
       error: error.message,
     });
   }

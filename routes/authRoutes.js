@@ -275,7 +275,30 @@ router.post("/verify-otp", async (req, res) => {
     return res.status(200).json({
       message: "Login verified successfully!",
       token,
-      user: { fullName: user.fullName, email: user.email, phone: user.phone },
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender || "Not Specified",
+        dob: user.dob || "Not Specified",
+        safetyInfo: {
+          bloodGroup: user.safetyInfo?.bloodGroup || "Not Specified",
+          medicalConditions: user.safetyInfo?.medicalConditions || "None",
+          allergies: user.safetyInfo?.allergies || "None",
+          address: user.safetyInfo?.address || "Not Provided",
+          hospital: user.safetyInfo?.hospital || "Not Provided",
+        },
+
+        emergencyContacts: user.emergencyContacts || [],
+        permissions: user.permissions || {
+          location: false,
+          notifications: false,
+          background: false,
+          sms: false,
+          phone: false,
+        },
+      },
     });
   } catch (error) {
     console.error(" [VERIFY OTP ERROR]:", error);
