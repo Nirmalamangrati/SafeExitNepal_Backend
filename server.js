@@ -10,7 +10,7 @@ const admin = require("firebase-admin");
 const path = require("path");
 
 const serviceAccount = require("./safeexit-firebase-key.json");
-
+app.set("trust proxy", 1);
 app.use(
   cors({
     origin: "*",
@@ -113,7 +113,7 @@ mongoose
       );
   });
 
-// Native Server Network Listener Hook (Using http.server instead of app.listen)
+// Expo Server Network Listener Hook (Using http.server instead of app.listen)
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://192.168.43.132:${PORT}`);
