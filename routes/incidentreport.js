@@ -50,7 +50,7 @@ async function runClusteringAndDetection(io) {
           latitude: center[0],
           longitude: center[1],
           totalReports: clusterReports.length,
-          message: `🚨 Warning: ${clusterReports.length} incidents have been reported in this area recently!`,
+          message: ` Warning: ${clusterReports.length} incidents have been reported in this area recently!`,
         });
       }
     });
@@ -132,7 +132,7 @@ module.exports = (io) => {
 
       if (isDuplicate) {
         console.log(
-          `⚠️ [SPAM BLOCKED] Duplicate ${incidentType} alert prevented from user: ${reporterName}`,
+          ` [SPAM BLOCKED] Duplicate ${incidentType} alert prevented from user: ${reporterName}`,
         );
         return res.status(400).json({
           success: false,
