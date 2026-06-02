@@ -27,8 +27,19 @@ const IncidentSchema = new mongoose.Schema(
       contact: { type: String, default: "" },
       isAnonymous: { type: Boolean, default: false },
     },
+    //3. Rescue Team Info Data Setup:
+    rescueTeamInfo: {
+      teamName: { type: String, default: "" },
+      contact: { type: String, default: "" },
+      members: { type: String, default: "" },
+      email: { type: String, default: "" },
+      website: { type: String, default: "" },
+      status: { type: String, default: "PENDING" },
+      location: { type: String, default: "" },
+    },
   },
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Incident", IncidentSchema);
+module.exports =
+  mongoose.models.Incident || mongoose.model("Incident", IncidentSchema);
