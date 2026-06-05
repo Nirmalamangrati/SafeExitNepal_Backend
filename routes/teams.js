@@ -126,21 +126,33 @@ router.get("/", async (req, res) => {
   try {
     // Query parameters for Haversine distance calculation
     const { reporterName, userLat, userLng } = req.query;
+
+    // डेटाबेसबाट rescueTeamInfo भएका सबै इन्सिडेन्टहरू तान्ने
     const teamsWithIncidents = await Incident.find({
       rescueTeamInfo: { $exists: true, $ne: null },
     }).sort({ createdAt: -1 });
+
     let formattedTeams = [];
-    // Promise.all loop to process each team concurrently for better performance, especially when there are many teams
+
+    // Promise.all loop to process each team concurrently
     await Promise.all(
       teamsWithIncidents.map(async (doc) => {
         const info = doc.rescueTeamInfo || {};
         const currentStatus = info.status || "Available";
-        // Algorithm: if On the Way ho & reporter match hudaena vane arulai lukaune
-        if (currentStatus === "On the Way" || currentStatus === "On the way") {
-          const docReporter = doc.reporterInfo ? doc.reporterInfo.yourName : "";
-          if (docReporter !== reporterName) return;
+        if (
+          currentStatus.toLowerCase() === "on the way" ||
+          currentStatus.toLowerCase() === "on the way"
+        ) {
+          const docReporter =
+            doc.reporterInfo && doc.reporterInfo.yourName
+              ? doc.reporterInfo.yourName
+              : null;
+          if (docReporter && reporterName && docReporter !== reporterName) {
+            return;
+          }
         }
-        //  applai KALMAN FILTER: location dataharu jump huna bata jigauna ra smooth banauna
+
+        //app lai kalmam filter
         const rawLat = info.latitude || doc.latitude || 27.7172;
         const rawLng = info.longitude || doc.longitude || 85.324;
         const filteredLoc = applyKalmanFilter(
@@ -148,7 +160,8 @@ router.get("/", async (req, res) => {
           rawLat,
           rawLng,
         );
-        //applai HAVERSINE: user ra team bichko sidha distance nikalna
+
+        // app lai haversine
         let straightDistance = Infinity;
         if (userLat && userLng) {
           straightDistance = getHaversineDistance(
@@ -158,14 +171,16 @@ router.get("/", async (req, res) => {
             filteredLoc.lng,
           );
         }
-        //  applai DIJKSTRA / A* (OSRM): yadi team 'On the Way' xa vane road distance nikalne
+
+        // applai OASRAM routing
         let routingData = {
           roadCoordinates: [],
           roadDistanceKm: "N/A",
           etaMinutes: "N/A",
         };
+
         if (
-          (currentStatus === "On the Way" || currentStatus === "On the way") &&
+          currentStatus.toLowerCase() === "on the way" &&
           doc.latitude &&
           doc.longitude
         ) {
@@ -188,7 +203,8 @@ router.get("/", async (req, res) => {
           status: currentStatus,
           location: info.location || doc.locationName || "N/A",
           locationName: info.location || doc.locationName || "N/A",
-          // algorithm ko output haru
+
+          // Algoritms output
           distanceFromMe:
             straightDistance !== Infinity
               ? straightDistance.toFixed(2) + " km"
@@ -196,29 +212,34 @@ router.get("/", async (req, res) => {
           straightDistanceNum: straightDistance,
           roadRoute: routingData.roadCoordinates,
           roadDistance: routingData.roadDistanceKm,
-          eta: routingData.etaMinutes
-            ? routingData.etaMinutes + " mins"
-            : "N/A",
-          // kalman filter applied location (team ko current smoothed location) - yo nai frontend ma dekhaune
+          eta:
+            routingData.etaMinutes && routingData.etaMinutes !== "N/A"
+              ? routingData.etaMinutes + " mins"
+              : "N/A",
+
+          // coordinates
           latitude: filteredLoc.lat,
           longitude: filteredLoc.lng,
-          // pidit aafai uviyeko location
-          clientLatitude: doc.latitude || 27.7172,
-          clientLongitude: doc.longitude || 85.324,
+          clientLatitude: doc.latitude || 27.7007,
+          clientLongitude: doc.longitude || 85.3001,
         });
       }),
     );
-    // 4. HAVERSINE SORTING:distanceko aadhar maa sabaivanda najikko team aauxa
+
+    //Haversine sorting: distance ko aadharmaa krambadda garne
     if (userLat && userLng) {
       formattedTeams.sort(
         (a, b) => a.straightDistanceNum - b.straightDistanceNum,
       );
     }
+
     return res.status(200).json(formattedTeams);
   } catch (error) {
+    console.error("GET Teams Error:", error);
     return res.status(500).json({ message: error.message });
   }
 });
+
 // NEW API: GET INCIDENT CLUSTERS (K-MEANS)
 // admin panelko 'Active Hazards' mapma dekhaune cluster data dinay API, jasma K-means clustering algorithm apply garera hotspots identify garne
 router.get("/analytics/clusters", async (req, res) => {
@@ -352,7 +373,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ४. UPDATE WHOLE TEAM / EDIT (PUT)
+// 4. UPDATE WHOLE TEAM / EDIT (PUT)
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
