@@ -5,6 +5,7 @@ require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
 const User = require("./models/User");
+const Shelter = require("./models/Shelter");
 const app = express();
 const admin = require("firebase-admin");
 const path = require("path");
@@ -52,6 +53,7 @@ app.use("/api/teams", require("./routes/teams"));
 // Core Real-time Routers passing socket.io interface
 const incidentRouter = require("./routes/incidentreport")(io);
 app.use("/api/incidents", incidentRouter);
+const registerShelterHandlers = require("./routes/safeshelter");
 
 app.use("/api/sos", require("./routes/sosRoutes"));
 app.get("/", (req, res) => {
