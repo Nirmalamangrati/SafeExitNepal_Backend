@@ -19,12 +19,6 @@ const io = new Server(server, {
   },
 });
 
-// Connect to MongoDB Database
-mongoose
-  .connect("mongodb://127.0.0.1:27017/crisis_management")
-  .then(() => console.log("MongoDB connected successfully."))
-  .catch((err) => console.error("Database connection error:", err));
-
 // Helper function to fetch and broadcast latest shelters to everyone
 const broadcastShelterList = async () => {
   try {

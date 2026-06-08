@@ -50,7 +50,6 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/uploads", express.static("uploads"));
 app.use("/api/profile", require("./routes/profile"));
 app.use("/api/teams", require("./routes/teams"));
-// Core Real-time Routers passing socket.io interface
 const incidentRouter = require("./routes/incidentreport")(io);
 app.use("/api/incidents", incidentRouter);
 const registerShelterHandlers = require("./routes/safeshelter");
