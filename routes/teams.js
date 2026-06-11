@@ -126,8 +126,6 @@ router.get("/", async (req, res) => {
   try {
     // Query parameters for Haversine distance calculation
     const { reporterName, userLat, userLng } = req.query;
-
-    // डेटाबेसबाट rescueTeamInfo भएका सबै इन्सिडेन्टहरू तान्ने
     const teamsWithIncidents = await Incident.find({
       rescueTeamInfo: { $exists: true, $ne: null },
     }).sort({ createdAt: -1 });

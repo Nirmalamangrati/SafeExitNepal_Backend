@@ -52,8 +52,8 @@ app.use("/api/profile", require("./routes/profile"));
 app.use("/api/teams", require("./routes/teams"));
 const incidentRouter = require("./routes/incidentreport")(io);
 app.use("/api/incidents", incidentRouter);
-const registerShelterHandlers = require("./routes/safeshelter");
-
+const safeshelterRouter = require("./routes/safeshelter")(io);
+app.use("/api/safeshelter", safeshelterRouter);
 app.use("/api/sos", require("./routes/sosRoutes"));
 app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running with Real-time SOS Engine...");

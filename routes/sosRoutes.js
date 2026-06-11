@@ -82,7 +82,7 @@ router.post("/trigger", async (req, res) => {
             ),
           );
 
-        // 🚨 CRITICAL FIX: Extract socket server via express global app configuration context instead of req.io
+        //  CRITICAL FIX: Extract socket server via express global app configuration context instead of req.io
         const io = req.app.get("io");
         if (io) {
           io.emit("ADMIN_SOS_ALERT", {
