@@ -206,7 +206,7 @@ module.exports = (io) => {
 
       // duplicate navayemaa matrae database object banaune
       const incidentData = {
-        incidentCategory: aiCategory, 
+        incidentCategory: aiCategory,
         incidentType: req.body.incidentType || aiCategory.toUpperCase(),
         incidentDate: req.body.incidentDate,
         locationName: req.body.locationName,
@@ -241,17 +241,16 @@ module.exports = (io) => {
     }
   });
 
-  // 4. Fetch approved incidents for Incident Tab
-  router.get("/approved", async (req, res) => {
+  router.get("/", async (req, res) => {
     try {
-      const approvedList = await Incident.find({
-        status: { $regex: /^approved$/i },
-      }).sort({
-        createdAt: -1,
-      });
-      res.json(approvedList);
+      const allIncidents = await Incident.find({
+        rescueTeamInfo: { $exists: false },
+      }).sort({ createdAt: -1 });
+
+      res.json(allIncidents);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("Fetch Incidents Error:", error);
+      res.status(500).json({ success: false, error: error.message });
     }
   });
   //Delete an incident report (Admin Panel)
