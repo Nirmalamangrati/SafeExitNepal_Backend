@@ -58,6 +58,68 @@ async function runClusteringAndDetection(io) {
     console.error("Clustering Error:", err);
   }
 }
+// Description read garera Priority Category xuttaune NLP function
+function classifyIncidentPriority(description) {
+  if (!description) return "low"; // kei navaye samanya manne
+
+  const text = description.toLowerCase();
+
+  // 1.  (Critical Keywords)
+  const criticalWords = [
+    "बचाउ",
+    "बचाउनुहोस्",
+    "फसे",
+    "अड्किए",
+    "रगत",
+    "हस्पिटल",
+    "घाइते",
+    "मुटु",
+    "help",
+    "earthquake",
+    "blood",
+    "trapped",
+    "bachaunuhos",
+    "critical",
+    "die",
+    "injured",
+    "hospital",
+  ];
+
+  // 2. (High Keywords)
+  const highWords = [
+    "बाढी",
+    "पहिरो",
+    "आगो",
+    "भत्कियो",
+    "विस्फोट",
+    "flood",
+    "landslide",
+    "fire",
+    "collapse",
+    "injury",
+    "cylinder",
+  ];
+
+  // 3.(Medium Keywords)
+  const mediumWords = [
+    "बाटो बन्द",
+    "अवरोध",
+    "Blocked",
+    "road close",
+    "water log",
+    "tree fall",
+    "accident",
+    "जाम",
+    "थुनियो",
+  ];
+
+  // AI checking logic
+  if (criticalWords.some((word) => text.includes(word))) return "critical";
+  if (highWords.some((word) => text.includes(word))) return "high";
+  if (mediumWords.some((word) => text.includes(word))) return "medium";
+
+  return "low";
+}
 
 module.exports = (io) => {
   // 1. REFRESH LOGIC: Admin panel refresh huda sabai incidents list pathaune GET API
@@ -103,8 +165,7 @@ module.exports = (io) => {
       res.status(500).json({ success: false, error: error.message });
     }
   });
-
-  // 3. Post a new incident report from mobile app
+  // 3. Post a new incident report from mobile app (AI Powered Version)
   router.post("/", upload.single("file"), async (req, res) => {
     try {
       // mobile bata aako reporterInfo & incidentType safely store garne
@@ -129,7 +190,6 @@ module.exports = (io) => {
       });
 
       // yadi duplicati report vetiyema database save nagarne ra sidhai rokne
-
       if (isDuplicate) {
         console.log(
           ` [SPAM BLOCKED] Duplicate ${incidentType} alert prevented from user: ${reporterName}`,
@@ -140,11 +200,14 @@ module.exports = (io) => {
             " You have already reported this incident recently. Our rescue teams are actively reviewing it!",
         });
       }
+      const aiCategory =
+        req.body.incidentCategory ||
+        classifyIncidentPriority(req.body.description);
 
       // duplicate navayemaa matrae database object banaune
       const incidentData = {
-        incidentCategory: req.body.incidentCategory,
-        incidentType: req.body.incidentType,
+        incidentCategory: aiCategory, 
+        incidentType: req.body.incidentType || aiCategory.toUpperCase(),
         incidentDate: req.body.incidentDate,
         locationName: req.body.locationName,
         latitude: parseFloat(req.body.latitude),
@@ -267,7 +330,3 @@ module.exports = (io) => {
   });
   return router;
 };
-
-
-
-

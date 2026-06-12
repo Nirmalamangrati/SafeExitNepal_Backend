@@ -6,6 +6,7 @@ const ShelterSchema = new mongoose.Schema(
     amenities: { type: String, default: "" },
     capacity: { type: String, default: "N/A" },
     status: { type: String, default: "Open" },
+    shelterType: { type: String, default: "Buildings" },
     fulladdress: { type: String, default: "" },
     supervisorName: { type: String, default: "" },
     contactPhone: { type: String, default: "" },
