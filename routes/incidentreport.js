@@ -241,18 +241,6 @@ module.exports = (io) => {
     }
   });
 
-  router.get("/", async (req, res) => {
-    try {
-      const allIncidents = await Incident.find({
-        rescueTeamInfo: { $exists: false },
-      }).sort({ createdAt: -1 });
-
-      res.json(allIncidents);
-    } catch (error) {
-      console.error("Fetch Incidents Error:", error);
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
   //Delete an incident report (Admin Panel)
   router.delete("/:id", async (req, res) => {
     try {
@@ -306,6 +294,17 @@ module.exports = (io) => {
       res.json({ critical, high, medium, low });
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  });
+  router.get("/approved", async (req, res) => {
+    try {
+      const approvedIncidents = await Incident.find({
+        status: "APPROVED",
+      }).sort({ createdAt: -1 });
+      res.json(approvedIncidents);
+    } catch (error) {
+      console.error("Fetch Approved Error:", error);
+      res.status(500).json({ success: false, error: error.message });
     }
   });
   //manually trigger a new incident report (for testing purposes)

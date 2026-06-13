@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-
-// 🟢 Import your brand new RescueTeam model here
 const RescueTeam = require("../models/RescueTeam");
 
 const kalmanStates = {};
@@ -101,7 +99,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 2. REGISTER/ADD NEW TEAM (POST) - FIXED FOR NEW TABLE
+// 2. REGISTER/ADD NEW TEAM (POST)
 router.post("/", async (req, res) => {
   try {
     const {
@@ -163,7 +161,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 3. EDIT TEAM (PUT) - FIXED FOR NEW TABLE
+// 3. EDIT TEAM (PUT)
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -229,7 +227,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// 4. UPDATE STATUS (PATCH) - FIXED FOR NEW TABLE
+// 4. UPDATE STATUS (PATCH)
 router.patch("/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
@@ -258,7 +256,7 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
-// 5. DELETE TEAM - FIXED FOR NEW TABLE
+// 5. DELETE TEAM
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
