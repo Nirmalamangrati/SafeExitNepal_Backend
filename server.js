@@ -4,13 +4,19 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
-const User = require("./models/User");
-const Shelter = require("./models/Shelter");
-const app = express();
 const admin = require("firebase-admin");
 const path = require("path");
+const fs = require("fs");
 
+const User = require("./models/User");
+const Shelter = require("./models/Shelter");
+const offline = require("./models/offline");
 const serviceAccount = require("./safeexit-firebase-key.json");
+
+const offlineResourcesRouteInitializer = require("./routes/offlineResources");
+
+const app = express();
+
 app.set("trust proxy", 1);
 app.use(
   cors({
@@ -20,6 +26,7 @@ app.use(
   }),
 );
 app.use(express.json());
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -47,17 +54,30 @@ io.on("connection", (socket) => {
 
 // App Router Declarations
 app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/uploads", express.static("uploads"));
 app.use("/api/profile", require("./routes/profile"));
 app.use("/api/teams", require("./routes/teams"));
+
 const incidentRouter = require("./routes/incidentreport")(io);
 app.use("/api/incidents", incidentRouter);
+
 const safeshelterRouter = require("./routes/safeshelter")(io);
 app.use("/api/safeshelter", safeshelterRouter);
+
 app.use("/api/sos", require("./routes/sosRoutes"));
+
 app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running with Real-time SOS Engine...");
 });
+
+//  2. naya route lai 'io' pass gardae yaa link gariyo
+const offlineResourcesRouter = offlineResourcesRouteInitializer(io);
+app.use("/api/resources", offlineResourcesRouter);
+
+//  3. upload folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+if (!fs.existsSync("./uploads")) {
+  fs.mkdirSync("./uploads");
+}
 
 // Database URL Sanitizer Configuration Layer
 const dbURI = process.env.MONGO_URI || process.env.MONGODB_URI;
