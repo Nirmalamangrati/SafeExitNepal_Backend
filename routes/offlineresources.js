@@ -5,6 +5,14 @@ const path = require("path");
 const fs = require("fs");
 const OfflineResource = require("../models/offline");
 
+// 1. Just import the admin module.
+//  Do NOT add a custom serviceAccount path or call admin.initializeApp() here!
+// It will automatically use the default app initialization already configured in server.js.
+const admin = require("firebase-admin");
+
+// Array to store active client FCM device tokens
+let userDeviceTokens = [];
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -24,6 +32,18 @@ const formatFileSize = (bytes) => {
 };
 
 module.exports = function (io) {
+  //  2. Route: Save FCM Token sent from the client side browser
+  router.post("/save-token", (req, res) => {
+    const { token } = req.body;
+    if (token && !userDeviceTokens.includes(token)) {
+      userDeviceTokens.push(token);
+    }
+    return res.json({
+      success: true,
+      message: "Token registered successfully.",
+    });
+  });
+
   //  1. Upload file using the Model Database query
   router.post("/upload", upload.single("file"), async (req, res) => {
     try {
@@ -31,7 +51,6 @@ module.exports = function (io) {
         return res.status(400).json({ error: "Please choose a file" });
       }
 
-      //  Added resourceType extraction from req.body
       const { version, resourceType } = req.body;
       const formattedSize = formatFileSize(req.file.size);
       const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
@@ -44,7 +63,31 @@ module.exports = function (io) {
         fileUrl: fileUrl,
         localPath: req.file.filename,
       });
+
       if (io) io.emit("new_resource_posted", newResource);
+
+      // 3. Broadcast Firebase Push Notification to all registered device tokens
+      if (userDeviceTokens.length > 0) {
+        const payload = {
+          notification: {
+            title: "New Resource Added! 📂",
+            body: `${newResource.title} is now available for download.`,
+          },
+          tokens: userDeviceTokens,
+        };
+
+        try {
+          // Accesses the messaging service instance shared across the global context
+          const fbResponse = await admin
+            .messaging()
+            .sendEachForMulticast(payload);
+          console.log(
+            `Successfully sent push notifications to ${fbResponse.successCount} devices.`,
+          );
+        } catch (fbError) {
+          console.error("Firebase push notification delivery failed:", fbError);
+        }
+      }
 
       return res.status(201).json({
         success: true,
@@ -72,27 +115,21 @@ module.exports = function (io) {
     try {
       const { id } = req.params;
       const { version, resourceType, status } = req.body;
-
-      // Ensure fields contain fallback defaults if sent empty
       const updatedResource = await OfflineResource.findByIdAndUpdate(
         id,
         {
-          resourceType: resourceType || "Map", //  Included target modification parameter
+          resourceType: resourceType || "Map",
           version: version || "v1.0.0",
           status: status || "Downloaded",
         },
-        { new: true }, // Crucial: forces database to return the altered data layout object
+        { new: true },
       );
-
       if (!updatedResource) {
         return res
           .status(404)
           .json({ success: false, error: "Resource item data not found" });
       }
-
-      // Broadcast changes across the Socket engine configuration to notify active listeners
       if (io) io.emit("resource_updated", updatedResource);
-
       return res.json({ success: true, data: updatedResource });
     } catch (error) {
       console.error("Upstream DB put modification operation halted:", error);
@@ -108,7 +145,6 @@ module.exports = function (io) {
     try {
       const { id } = req.params;
       const fileToDelete = await OfflineResource.findById(id);
-
       if (fileToDelete) {
         const filePath = path.join(
           __dirname,
@@ -118,19 +154,14 @@ module.exports = function (io) {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
         }
-
         await OfflineResource.findByIdAndDelete(id);
-
         if (io) io.emit("resource_deleted", id);
-
         return res.json({ success: true, message: "File removed completely" });
       }
-
       return res.status(404).json({ error: "File not found" });
     } catch (error) {
       return res.status(500).json({ error: "Failed to delete file" });
     }
   });
-
   return router;
 };
