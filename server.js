@@ -7,14 +7,12 @@ const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 const path = require("path");
 const fs = require("fs");
-
 const User = require("./models/User");
 const Shelter = require("./models/Shelter");
 const offline = require("./models/offline");
 const serviceAccount = require("./safeexit-firebase-key.json");
-
 const offlineResourcesRouteInitializer = require("./routes/offlineResources");
-
+const hotlineRoutes = require("./routes/hotlineRoutes");
 const app = express();
 
 app.set("trust proxy", 1);
@@ -64,7 +62,7 @@ const safeshelterRouter = require("./routes/safeshelter")(io);
 app.use("/api/safeshelter", safeshelterRouter);
 
 app.use("/api/sos", require("./routes/sosRoutes"));
-
+app.use("/api/hotlines", hotlineRoutes);
 app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running with Real-time SOS Engine...");
 });

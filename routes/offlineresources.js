@@ -9,10 +9,8 @@ const OfflineResource = require("../models/offline");
 //  Do NOT add a custom serviceAccount path or call admin.initializeApp() here!
 // It will automatically use the default app initialization already configured in server.js.
 const admin = require("firebase-admin");
-
 // Array to store active client FCM device tokens
 let userDeviceTokens = [];
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
