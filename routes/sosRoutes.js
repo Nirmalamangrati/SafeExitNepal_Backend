@@ -133,5 +133,4 @@ router.post("/acknowledge", async (req, res) => {
     .status(400)
     .json({ success: false, message: "Alert expired or resolved" });
 });
-
 module.exports = router;

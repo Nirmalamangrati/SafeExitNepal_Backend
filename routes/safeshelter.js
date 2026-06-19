@@ -12,7 +12,6 @@ const broadcastShelterList = async (io) => {
 
 module.exports = function (io) {
   // 1. REAL-TIME SOCKET.IO ENGINE LISTENERS
-
   io.on("connection", (socket) => {
     socket.on("GET_ALL_SHELTERS", async () => {
       try {
@@ -73,6 +72,5 @@ module.exports = function (io) {
       res.status(500).json({ message: err.message });
     }
   });
-
   return router;
 };
