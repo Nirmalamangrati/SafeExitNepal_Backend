@@ -33,7 +33,7 @@ router.post("/trigger", async (req, res) => {
     if (fcmTokens.length > 0) {
       const messagePayload = {
         notification: {
-          title: `⚠️ EMERGENCY: ${user.name} is in danger!`,
+          title: ` EMERGENCY: ${user.name} is in danger!`,
           body: "Your emergency contacts have been sent an alarm notification. If no one responds within 30 seconds, the Nepal Police and admin will be automatically alerted.",
         },
         android: {
@@ -92,7 +92,7 @@ router.post("/trigger", async (req, res) => {
             status: "ESCALATED_TO_POLICE",
           });
           console.log(
-            `📡 [Socket.io] Escalated SOS alert broadcasted to Admin: ${newEvent._id}`,
+            ` [Socket.io] Escalated SOS alert broadcasted to Admin: ${newEvent._id}`,
           );
         }
 
