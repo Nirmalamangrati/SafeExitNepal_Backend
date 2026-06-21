@@ -6,12 +6,10 @@ const safeexitweather = "5c69533670cef7f0962dd11d72d04f683";
 router.get("/:city", async (req, res) => {
   const { city } = req.params;
   const cleanCity = city && city.trim() !== "" ? city.trim() : "Lalitpur";
-
   try {
     const currentRes = await axios.get(
       `https://openweathermap.org{cleanCity}&appid=${safeexitweather}&units=metric`,
     );
-
     const forecastRes = await axios.get(
       `https://openweathermap.org{cleanCity}&appid=${safeexitweather}&units=metric`,
     );
