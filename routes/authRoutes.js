@@ -269,11 +269,8 @@ router.post("/verify-otp", async (req, res) => {
     user.otpExpires = undefined;
     await user.save();
 
-    console.log(
-      `[VERIFY SUCCESS] User ${user.fullName} logged in successfully.`,
-    );
+    console.log(`[VERIFY SUCCESS] User ${user.fullName} `);
     return res.status(200).json({
-      message: "Login verified successfully!",
       token,
       user: {
         id: user._id,

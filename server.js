@@ -13,6 +13,7 @@ const offline = require("./models/offline");
 const serviceAccount = require("./safeexit-firebase-key.json");
 const offlineResourcesRouteInitializer = require("./routes/offlineResources");
 const hotlineRoutes = require("./routes/hotlineRoutes");
+const weatherRoutes = require("./routes/weatherRoutes");
 const app = express();
 
 app.set("trust proxy", 1);
@@ -66,6 +67,7 @@ app.use("/api/hotlines", hotlineRoutes);
 app.get("/", (req, res) => {
   res.send("SafeExitNepal Backend Running with Real-time SOS Engine...");
 });
+app.use("/api/weather", weatherRoutes);
 
 //  2. naya route lai 'io' pass gardae yaa link gariyo
 const offlineResourcesRouter = offlineResourcesRouteInitializer(io);

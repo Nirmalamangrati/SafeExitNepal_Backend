@@ -13,7 +13,7 @@ const SOSEventSchema = new mongoose.Schema(
     },
     status: { type: String, default: "active" }, // active, resolved
   },
-  { timestamps: true }, // यसले स्वतः createdAt र updatedAt थपिदिन्छ
+  { timestamps: true }, 
 );
 
 module.exports = mongoose.model("SOSEvent", SOSEventSchema);
