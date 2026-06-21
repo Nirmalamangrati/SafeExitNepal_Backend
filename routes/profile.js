@@ -77,7 +77,6 @@ router.put("/update/:userId", async (req, res) => {
     });
   } catch (error) {
     console.error("Update Error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server Error",

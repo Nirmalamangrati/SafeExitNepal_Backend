@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const safeexitweather = "5c69533670cef7f0962dd11d72d04f683";
-
 router.get("/:city", async (req, res) => {
   const { city } = req.params;
   const cleanCity = city && city.trim() !== "" ? city.trim() : "Lalitpur";
@@ -13,7 +12,6 @@ router.get("/:city", async (req, res) => {
     const forecastRes = await axios.get(
       `https://openweathermap.org{cleanCity}&appid=${safeexitweather}&units=metric`,
     );
-
     const cur = currentRes.data;
     const weatherData =
       cur.weather && cur.weather.length > 0
