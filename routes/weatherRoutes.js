@@ -1,23 +1,33 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const safeexitweather = "5c69533670cef7f0962dd11d72d04f683";
+
+// Your OpenWeatherMap API Key
+const safeexitweather = "5129d2e16d58ee35c833af12c71ce3ee";
+
 router.get("/:city", async (req, res) => {
   const { city } = req.params;
-  const cleanCity = city && city.trim() !== "" ? city.trim() : "Lalitpur";
+  const cleanCity = city && city.trim() !== "" ? city.trim() : "Biratnagar";
+
   try {
-    const currentRes = await axios.get(
-      `https://openweathermap.org{cleanCity}&appid=${safeexitweather}&units=metric`,
-    );
-    const forecastRes = await axios.get(
-      `https://openweathermap.org{cleanCity}&appid=${safeexitweather}&units=metric`,
-    );
+    // 1. Correct API URL for current weather data
+    const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${cleanCity}&appid=${safeexitweather}&units=metric`;
+
+    // 2. Correct API URL for 5-day / 3-hour forecast data
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cleanCity}&appid=${safeexitweather}&units=metric`;
+
+    // Fetch both datasets simultaneously to optimize speed
+    const [currentRes, forecastRes] = await Promise.all([
+      axios.get(currentUrl),
+      axios.get(forecastUrl),
+    ]);
+
     const cur = currentRes.data;
     const weatherData =
       cur.weather && cur.weather.length > 0
         ? cur.weather[0]
         : { main: "Clear", description: "clear sky", icon: "01d" };
-
+    // Send perfectly formatted data structure to your React Native application
     res.json({
       current: {
         name: cur.name,
@@ -39,7 +49,7 @@ router.get("/:city", async (req, res) => {
   } catch (error) {
     if (error.response) {
       console.error(
-        " OpenWeather Server Error Details:",
+        "OpenWeather Server Error Details:",
         error.response.status,
         error.response.data,
       );
