@@ -219,11 +219,9 @@ module.exports = (io) => {
           ? JSON.parse(req.body.reporterInfo)
           : {},
       };
-
       if (req.file) {
         incidentData.attachedFilePath = req.file.path;
       }
-
       const newIncident = new Incident(incidentData);
       await newIncident.save();
 
