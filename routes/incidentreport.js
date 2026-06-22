@@ -180,7 +180,6 @@ module.exports = (io) => {
       }
       const incidentType =
         req.body.incidentType || req.body.incidentCategory || "GENERAL";
-
       // 15 min vitra eautae user le report gare nagareko check garne
       const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
       const isDuplicate = await Incident.findOne({
@@ -188,7 +187,6 @@ module.exports = (io) => {
         incidentType: incidentType,
         createdAt: { $gte: fifteenMinutesAgo },
       });
-
       // yadi duplicati report vetiyema database save nagarne ra sidhai rokne
       if (isDuplicate) {
         console.log(
