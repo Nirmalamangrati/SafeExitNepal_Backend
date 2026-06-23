@@ -48,7 +48,6 @@ module.exports = function (io) {
       if (!req.file) {
         return res.status(400).json({ error: "Please choose a file" });
       }
-
       const { version, resourceType } = req.body;
       const formattedSize = formatFileSize(req.file.size);
       const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
