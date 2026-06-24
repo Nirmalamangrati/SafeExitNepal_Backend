@@ -189,5 +189,4 @@ router.get("/:city", async (req, res) => {
     res.status(500).json({ success: false, error: "Server error occurred" });
   }
 });
-
 module.exports = router;
