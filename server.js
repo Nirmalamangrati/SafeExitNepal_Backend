@@ -14,6 +14,7 @@ const serviceAccount = require("./safeexit-firebase-key.json");
 const offlineResourcesRouteInitializer = require("./routes/offlineResources");
 const hotlineRoutes = require("./routes/hotlineRoutes");
 const weatherRoutes = require("./routes/weatherRoutes");
+const aiClusteringRouter = require("./routes/aiclustering");
 const app = express();
 
 app.set("trust proxy", 1);
@@ -78,6 +79,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("./uploads");
 }
+//aiclustering for frontend
+app.use("/api/aiclustering", aiClusteringRouter);
 
 // Database URL Sanitizer Configuration Layer
 const dbURI = process.env.MONGO_URI || process.env.MONGODB_URI;
