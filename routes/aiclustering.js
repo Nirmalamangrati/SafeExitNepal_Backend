@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const axios = require("axios"); // Axios is already installed in your backend
 
 // 1. Correct paths and filenames loaded from your models directory
 const RescueTeam = require("../models/RescueTeam");
@@ -12,7 +11,7 @@ router.get("/:city", async (req, res) => {
   const { city } = req.params;
 
   try {
-    // 2. Verified endpoint structure calling your local weather route
+    // 2. Fetching weather data from your local working weather route
     const weatherResponse = await fetch(
       `http://192.168.43.132:8000/api/weather/${city}`,
     );
@@ -32,14 +31,12 @@ router.get("/:city", async (req, res) => {
       });
     }
 
-    // MATCHED EXACTLY with your weather route schema (Object mapping, not array)
     const currentList = data.current;
 
     const temp = currentList.main?.temp ?? 22;
     const humidity = currentList.main?.humidity ?? 50;
     const windSpeed = (currentList.wind?.speed ?? 0) * 3.6; // Convert to km/h
 
-    // Safely mapping from your weather object format
     const condition = currentList.weather ? currentList.weather.main : "Clear";
     const description = currentList.weather
       ? currentList.weather.description
@@ -55,10 +52,6 @@ router.get("/:city", async (req, res) => {
         totalRainNext24h += item.rain["3h"];
       }
     });
-
-    // ==========================================
-    // 🛠️ PRESENTATION OVERRIDE: FORCE CRITICAL AI TRIGGER
-    // Change this to 'false' once you finish testing to pull real live metrics
     const enableTestingOverride = true;
 
     let evalRain = totalRainNext24h;
@@ -76,7 +69,6 @@ router.get("/:city", async (req, res) => {
     let hazardType = "None";
     let isDisasterImminent = false;
 
-    // Weather threshold logic mapping
     if (evalRain > 50 || (evalCondition === "Rain" && evalHumidity > 90)) {
       hazardLevel = "Critical";
       hazardType = "Predictive Landslide & Flash Flood Warning";
@@ -163,38 +155,47 @@ router.get("/:city", async (req, res) => {
       });
     }
 
-    // 9. NATURAL LANGUAGE PROCESSING (Gemini AI Engine)
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-    const prompt = `
-      You are an NLP System for a Weather Crisis App named SafeExit Nepal.
-      Translate the following raw Algorithm outputs into human-readable, friendly, actionable safety advice for the citizens of ${city}.
+    // 9.yasma milauna baki xa
+    let hazardDescription = `ALERT: ${hazardType} in ${city} due to ${evalRain}mm rain forecast. Please move to safe shelters immediately.`;
 
-      [ALGORITHM METRICS]
-      - Classified Hazard Level: ${hazardLevel}
-      - Detected Hazard Type: ${hazardType}
-      - Cluster Density Analysis: ${densityStatus}
-      - Cumulative 24h Rain: ${evalRain.toFixed(1)}mm
-      - Current Weather Details: ${temp}°C, ${evalCondition} (${description})
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      const geminiUrl = `https://googleapis.com{apiKey}`;
 
-      [OUTPUT RULES]
-      1. Write a 1-2 sentence concise warning or safety tip in English based exactly on the metrics above.
-      2. If Hazard Level is 'Low' and Density is 'Low-Density', output exactly: "No high-density crisis clusters detected yet."
-      3. Reply with ONLY the plain text sentences. Do not use bolding, asterisks, or markdown.
-    `;
+      const prompt = `
+        You are an NLP System for a Weather Crisis App named SafeExit Nepal.
+        Translate the following raw outputs into friendly, actionable safety advice for the citizens of ${city}.
+        Metrics: Hazard Level ${hazardLevel}, Hazard Type ${hazardType}, 24h Rain ${evalRain}mm, Temp ${temp}°C, Condition ${evalCondition}.
+        Rule: Write a 1-2 sentence short warning in English. No markdown, no bold text, no asterisks. Plain text only.
+      `;
 
-    // FIXED: Formatted the prompt content parameter using the correct Content Object Array required by current Gemini standard
-    const aiResult = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
-    const hazardDescription = aiResult.text.trim();
+      const geminiResponse = await axios.post(geminiUrl, {
+        contents: [{ parts: [{ text: prompt }] }],
+      });
+
+      if (
+        geminiResponse.data &&
+        geminiResponse.data.candidates &&
+        geminiResponse.data.candidates[0] &&
+        geminiResponse.data.candidates[0].content &&
+        geminiResponse.data.candidates[0].content.parts &&
+        geminiResponse.data.candidates[0].content.parts[0] &&
+        geminiResponse.data.candidates[0].content.parts[0].text
+      ) {
+        hazardDescription =
+          geminiResponse.data.candidates[0].content.parts[0].text.trim();
+      }
+    } catch (aiApiError) {
+      console.error(
+        "Gemini Native Fetch Warning (Using algorithmic fallback):",
+        aiApiError.message,
+      );
+    }
 
     // 10. Prepare response array structure matching the frontend UI (.map)
     let activeHazardsArray = [];
 
-    if (
-      hazardLevel !== "Low" &&
-      hazardDescription !== "No high-density crisis clusters detected yet."
-    ) {
+    if (hazardLevel !== "Low") {
       activeHazardsArray.push({
         clusterId: Date.now(),
         totalReports: reportsCount,
