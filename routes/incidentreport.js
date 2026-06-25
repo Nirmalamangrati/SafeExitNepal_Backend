@@ -142,19 +142,16 @@ module.exports = (io) => {
       if (status && typeof status === "string") {
         status = status.toUpperCase();
       }
-
       const updatedIncident = await Incident.findByIdAndUpdate(
         id,
         { status: status },
         { new: true },
       );
-
       if (!updatedIncident) {
         return res
           .status(404)
           .json({ success: false, message: "Incident not found in database." });
       }
-
       //socket live broadcasting for status update
       io.emit("admin-incident-status-updated", updatedIncident);
       io.emit("incident-posted-public", updatedIncident);
