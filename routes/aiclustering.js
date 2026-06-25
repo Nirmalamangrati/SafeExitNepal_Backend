@@ -131,14 +131,11 @@ router.get("/:city", async (req, res) => {
         return shelterObj;
       });
     }
-    // 9.yasma milauna baki xa
     // 9. AI Generated Hazard Description
     let hazardDescription = `ALERT: ${hazardType} in ${city} due to ${evalRain}mm rain forecast. Please move to safe shelters immediately.`;
-
     // Gemini call only if hazard exists
     if (hazardLevel !== "Low") {
       const cacheKey = `${city}-${hazardLevel}-${hazardType}`;
-
       // Use cache if already generated
       if (geminiCache.has(cacheKey)) {
         hazardDescription = geminiCache.get(cacheKey);
@@ -146,35 +143,27 @@ router.get("/:city", async (req, res) => {
       } else {
         try {
           const apiKey = process.env.GEMINI_API_KEY;
-
           if (!apiKey) {
             throw new Error("GEMINI_API_KEY not found");
           }
-
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
           console.log(`[API CALL] Calling Gemini AI for ${city}...`);
-
           const prompt = `
-You are an NLP System for a Weather Crisis App named SafeExit Nepal.
-
-Generate a short public safety warning for citizens.
-
-City: ${city}
-Hazard Level: ${hazardLevel}
-Hazard Type: ${hazardType}
-Rainfall: ${evalRain} mm
-Temperature: ${temp}°C
-Weather Condition: ${evalCondition}
-
-Rules:
-- Maximum 2 sentences
-- Plain English only
-- No markdown
-- No bullet points
-- Provide actionable safety advice
-`;
-
+            You are an NLP System for a Weather Crisis App named SafeExit Nepal.
+              Generate a short public safety warning for citizens.
+              City: ${city}
+              Hazard Level: ${hazardLevel}
+              Hazard Type: ${hazardType}
+              Rainfall: ${evalRain} mm
+              Temperature: ${temp}°C
+              Weather Condition: ${evalCondition}
+              Rules:
+              - Maximum 2 sentences
+              - Plain English only
+              - No markdown
+              - No bullet points
+              - Provide actionable safety advice
+              `;
           const geminiResponse = await axios.post(
             geminiUrl,
             {
@@ -195,16 +184,12 @@ Rules:
               timeout: 7000,
             },
           );
-
           const generatedText =
             geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
           if (generatedText) {
             hazardDescription = generatedText;
-
             // Save response to cache
             geminiCache.set(cacheKey, generatedText);
-
             console.log(`[CACHE] Saved Gemini response for ${city}`);
           }
         } catch (aiApiError) {
