@@ -1,11 +1,9 @@
 const express = require("express");
 const router = (reportFilterRouter = express.Router());
 const Incident = require("../models/incident");
-
 const { kmeans } = require("ml-kmeans");
 const multer = require("multer");
 const path = require("path");
-
 const REPORT_THRESHOLD = 5;
 
 // Multer Storage Configuration
@@ -17,7 +15,6 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
-
 const upload = multer({ storage: storage });
 
 // K-Means Clustering & Threshold Detection Function
@@ -26,21 +23,17 @@ async function runClusteringAndDetection(io) {
     const recentIncidents = await Incident.find({
       createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     });
-
     if (!recentIncidents || recentIncidents.length < 3) return;
-
     const dataPoints = recentIncidents.map((inc) => [
       inc.latitude,
       inc.longitude,
     ]);
     const K = Math.max(2, Math.floor(recentIncidents.length / 3));
     const ans = kmeans(dataPoints, K, { initialization: "kmeans++" });
-
     const clusters = Array.from({ length: K }, () => []);
     ans.clusters.forEach((clusterIndex, dataIndex) => {
       clusters[clusterIndex].push(recentIncidents[dataIndex]);
     });
-
     clusters.forEach((clusterReports, index) => {
       if (clusterReports.length >= REPORT_THRESHOLD) {
         const center = ans.centroids[index];
@@ -155,7 +148,6 @@ module.exports = (io) => {
       //socket live broadcasting for status update
       io.emit("admin-incident-status-updated", updatedIncident);
       io.emit("incident-posted-public", updatedIncident);
-
       res.json({ success: true, data: updatedIncident });
     } catch (error) {
       console.error("Status Update Error:", error);
