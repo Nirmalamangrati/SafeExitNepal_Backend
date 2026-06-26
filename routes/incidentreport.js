@@ -4,7 +4,7 @@ const Incident = require("../models/incident");
 const { kmeans } = require("ml-kmeans");
 const multer = require("multer");
 const path = require("path");
-const REPORT_THRESHOLD = 5;
+const REPORT_THRESHOLD = 2;
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({

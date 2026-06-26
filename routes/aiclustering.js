@@ -142,6 +142,7 @@ router.get("/:city", async (req, res) => {
         console.log(`[CACHE] Using cached Gemini response for ${city}`);
       } else {
         try {
+          a;
           const apiKey = process.env.GEMINI_API_KEY;
           if (!apiKey) {
             throw new Error("GEMINI_API_KEY not found");
