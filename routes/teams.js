@@ -197,7 +197,6 @@ router.put("/:id", async (req, res) => {
       latitude: setLat,
       longitude: setLng,
     };
-
     const io = req.app.get("io");
     if (io) {
       io.emit("team-added-or-updated", formattedUpdatedTeam);
@@ -213,16 +212,13 @@ router.patch("/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
     const updated = await RescueTeam.findByIdAndUpdate(
       id,
       { $set: { status } },
       { new: true },
     );
-
     if (!updated)
       return res.status(404).json({ message: "Rescue team not found." });
-
     const io = req.app.get("io");
     if (io) {
       io.emit("team-added-or-updated", {
@@ -249,5 +245,4 @@ router.delete("/:id", async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 });
-
 module.exports = router;
