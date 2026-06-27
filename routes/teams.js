@@ -120,7 +120,6 @@ router.post("/", async (req, res) => {
       longitude: setLng,
     });
     const saved = await newTeam.save();
-
     const formattedTeam = {
       _id: saved._id,
       id: saved._id,
@@ -136,7 +135,6 @@ router.post("/", async (req, res) => {
       latitude: setLat,
       longitude: setLng,
     };
-
     const io = req.app.get("io");
     if (io) {
       io.emit("team-added-or-updated", formattedTeam);
@@ -163,7 +161,6 @@ router.put("/:id", async (req, res) => {
       latitude,
       longitude,
     } = req.body;
-
     const setLat = latitude || 27.7172;
     const setLng = longitude || 85.324;
 
