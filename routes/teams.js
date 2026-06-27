@@ -2,13 +2,10 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const RescueTeam = require("../models/RescueTeam");
-
 const kalmanStates = {};
-
 function initKalmanState() {
   return { q: 0.00001, r: 0.001, x: null, y: null, p: 1.0 };
 }
-
 function applyKalmanFilter(teamId, measuredLat, measuredLng) {
   if (!kalmanStates[teamId]) {
     kalmanStates[teamId] = initKalmanState();
@@ -24,7 +21,6 @@ function applyKalmanFilter(teamId, measuredLat, measuredLng) {
   state.p = (1 - k) * state.p;
   return { lat: state.x, lng: state.y };
 }
-
 function getHaversineDistance(lat1, lon1, lat2, lon2) {
   if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
   const R = 6371;
@@ -46,7 +42,6 @@ router.get("/", async (req, res) => {
     const { userLat, userLng } = req.query;
     // Fetch directly from the pure RescueTeam table
     const activeTeams = await RescueTeam.find().sort({ createdAt: -1 });
-
     const formattedTeams = activeTeams.map((team) => {
       const filteredLoc = applyKalmanFilter(
         team._id.toString(),
