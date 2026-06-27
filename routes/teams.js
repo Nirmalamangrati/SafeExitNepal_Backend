@@ -103,14 +103,11 @@ router.post("/", async (req, res) => {
       latitude,
       longitude,
     } = req.body;
-
     if (!name || !contact || !members || !location) {
       return res.status(400).json({ message: "Required fields are missing." });
     }
-
     const setLat = latitude || 27.7172;
     const setLng = longitude || 85.324;
-
     const newTeam = new RescueTeam({
       name,
       contact,
@@ -122,7 +119,6 @@ router.post("/", async (req, res) => {
       latitude: setLat,
       longitude: setLng,
     });
-
     const saved = await newTeam.save();
 
     const formattedTeam = {
