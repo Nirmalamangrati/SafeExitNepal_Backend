@@ -48,7 +48,6 @@ router.get("/", async (req, res) => {
         team.latitude || 27.7172,
         team.longitude || 85.324,
       );
-
       let straightDistance = Infinity;
       if (userLat && userLng) {
         straightDistance = getHaversineDistance(
@@ -58,7 +57,6 @@ router.get("/", async (req, res) => {
           filteredLoc.lng,
         );
       }
-
       return {
         _id: team._id,
         id: team._id,
@@ -80,13 +78,11 @@ router.get("/", async (req, res) => {
         longitude: filteredLoc.lng,
       };
     });
-
     if (userLat && userLng) {
       formattedTeams.sort(
         (a, b) => a.straightDistanceNum - b.straightDistanceNum,
       );
     }
-
     return res.status(200).json(formattedTeams);
   } catch (error) {
     console.error("GET Teams Error:", error);
