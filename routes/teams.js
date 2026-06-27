@@ -163,7 +163,6 @@ router.put("/:id", async (req, res) => {
     } = req.body;
     const setLat = latitude || 27.7172;
     const setLng = longitude || 85.324;
-
     const updated = await RescueTeam.findByIdAndUpdate(
       id,
       {
@@ -181,10 +180,8 @@ router.put("/:id", async (req, res) => {
       },
       { new: true },
     );
-
     if (!updated)
       return res.status(404).json({ message: "Rescue team not found." });
-
     const formattedUpdatedTeam = {
       _id: updated._id,
       id: updated._id,
