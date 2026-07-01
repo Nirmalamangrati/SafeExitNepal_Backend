@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-const Hotline = require("../models/hotlineModel");
-
+const Hotline = require("../models/HotlineModel");
 // @desc    Get all hotlines (GET)
 // @route   GET /api/hotlines
 const getHotlines = async (req, res) => {
