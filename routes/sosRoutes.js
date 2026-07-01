@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
-const SOSEvent = require("../models/sosRoutes");
+const SosRoute = require("../models/SosRoutes");
 const axios = require("axios");
 const admin = require("firebase-admin");
 
