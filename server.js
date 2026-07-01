@@ -14,7 +14,7 @@ const serviceAccount = process.env.FIREBASE_KEY
   ? JSON.parse(process.env.FIREBASE_KEY)
   : require("./safeexit-firebase-key.json");
 const offlineResourcesRouteInitializer = require("./routes/offlineresources");
-const hotlineRoutes = require("./routes/hotlineRoutes");
+const Hotline = require("../models/HotlineModel");
 const weatherRoutes = require("./routes/weatherRoutes");
 const aiClusteringRouter = require("./routes/aiclustering");
 const app = express();
