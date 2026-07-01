@@ -1,6 +1,6 @@
 const express = require("express");
 const router = (reportFilterRouter = express.Router());
-const Incident = require("../models/incident");
+const Incident = require("../models/Incident");
 const { kmeans } = require("ml-kmeans");
 const multer = require("multer");
 const path = require("path");
