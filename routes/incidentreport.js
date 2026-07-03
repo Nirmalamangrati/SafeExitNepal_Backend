@@ -288,16 +288,12 @@ module.exports = (io) => {
   router.post("/incidents", async (req, res) => {
     try {
       console.log("BODY:", req.body);
-
       const incident = await Incident.create(req.body);
-
       io.emit("admin-new-incident", incident);
-
       res.status(201).json(incident);
     } catch (err) {
       console.log("FULL ERROR:");
       console.log(err);
-
       res.status(500).json({
         message: err.message,
       });
