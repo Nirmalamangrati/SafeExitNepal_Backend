@@ -54,7 +54,6 @@ async function runClusteringAndDetection(io) {
 // Description read garera Priority Category xuttaune NLP function
 function classifyIncidentPriority(description) {
   if (!description) return "low"; // kei navaye samanya manne
-
   const text = description.toLowerCase();
 
   // 1.  (Critical Keywords)
