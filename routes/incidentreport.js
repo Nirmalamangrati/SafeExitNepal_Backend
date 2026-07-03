@@ -226,24 +226,20 @@ module.exports = (io) => {
   router.delete("/:id", async (req, res) => {
     try {
       const { id } = req.params;
-
       // Execute physical query cleanup on cluster
       const deletedIncident = await Incident.findByIdAndDelete(id);
-
       if (!deletedIncident) {
         return res.status(404).json({
           success: false,
           message: "Incident record not found inside cluster database.",
         });
       }
-
       // Capture express app application instance references for Socket.io
       const io = req.app.get("socketio");
       if (io) {
         // Broadcast globally to all nodes (mobiles, other dashboard instances)
         io.emit("incident-deleted-broadcast", id);
       }
-
       return res.status(200).json({
         success: true,
         message: "Incident deleted successfully from persistent storage.",
