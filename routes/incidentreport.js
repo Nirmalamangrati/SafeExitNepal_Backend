@@ -211,12 +211,10 @@ module.exports = (io) => {
       }
       const newIncident = new Incident(incidentData);
       await newIncident.save();
-
       runClusteringAndDetection(io);
 
       // Send live notification to admin panel
       io.emit("admin-new-incident", newIncident);
-
       res.status(201).json({ success: true, data: newIncident });
     } catch (error) {
       console.error("Post Error:", error);
