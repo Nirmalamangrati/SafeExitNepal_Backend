@@ -130,7 +130,6 @@ module.exports = (io) => {
     try {
       const { id } = req.params;
       let { status } = req.body;
-
       if (status && typeof status === "string") {
         status = status.toUpperCase();
       }
