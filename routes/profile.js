@@ -76,5 +76,4 @@ router.put("/update/:userId", async (req, res) => {
     });
   }
 });
-
 module.exports = router;
