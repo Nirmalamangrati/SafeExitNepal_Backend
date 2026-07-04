@@ -9,7 +9,6 @@ const broadcastShelterList = async (io) => {
     console.error("Socket broadcast failed:", error);
   }
 };
-
 module.exports = function (io) {
   // 1. REAL-TIME SOCKET.IO ENGINE LISTENERS
   io.on("connection", (socket) => {
@@ -27,7 +26,6 @@ module.exports = function (io) {
       try {
         const newShelter = new Shelter(shelterData);
         await newShelter.save();
-
         console.log(` Shelter Added via Socket: ${shelterData.name}`);
         await broadcastShelterList(io);
       } catch (error) {
