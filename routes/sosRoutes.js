@@ -11,13 +11,10 @@ const activeAlerts = new Map();
 router.post("/trigger", async (req, res) => {
   try {
     const { userId, location } = req.body;
-
     const newEvent = new SOSEvent({ userId, location, status: "PENDING" });
     await newEvent.save();
-
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
-
     const contactPhones = user.emergencyContacts
       ? user.emergencyContacts.map((c) => c.phone)
       : [];
