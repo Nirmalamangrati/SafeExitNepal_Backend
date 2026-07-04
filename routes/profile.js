@@ -61,9 +61,7 @@ router.put("/update/:userId", async (req, res) => {
     if (emergencyContacts) {
       user.emergencyContacts = emergencyContacts;
     }
-
     await user.save();
-
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
