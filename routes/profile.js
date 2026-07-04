@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const User = require("../models/User");
-
 router.put("/update/:userId", async (req, res) => {
   const { userId } = req.params;
   const {
@@ -21,7 +20,6 @@ router.put("/update/:userId", async (req, res) => {
     if (mongoose.Types.ObjectId.isValid(userId)) {
       user = await User.findById(userId);
     }
-
     if (!user && phone) {
       user = await User.findOne({ phone: phone.trim() });
     }
