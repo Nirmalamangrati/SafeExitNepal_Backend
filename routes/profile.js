@@ -5,7 +5,6 @@ const User = require("../models/User");
 
 router.put("/update/:userId", async (req, res) => {
   const { userId } = req.params;
-
   const {
     fullName,
     phone,
@@ -15,7 +14,6 @@ router.put("/update/:userId", async (req, res) => {
     bloodGroup,
     emergencyContacts,
   } = req.body;
-
   try {
     let user = null;
 
