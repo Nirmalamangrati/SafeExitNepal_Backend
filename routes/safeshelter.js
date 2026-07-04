@@ -39,7 +39,6 @@ module.exports = function (io) {
         const { id, ...shelterData } = data;
         await Shelter.findByIdAndUpdate(id, shelterData, { new: true });
         console.log(` Shelter Edited via Socket ID: ${id}`);
-
         await broadcastShelterList(io);
       } catch (error) {
         console.error("Socket EDIT_SHELTER error:", error);
@@ -52,7 +51,6 @@ module.exports = function (io) {
         const { id } = data;
         await Shelter.findByIdAndDelete(id);
         console.log(` Shelter Deleted via Socket ID: ${id}`);
-
         await broadcastShelterList(io);
       } catch (error) {
         console.error("Socket DELETE_SHELTER error:", error);
