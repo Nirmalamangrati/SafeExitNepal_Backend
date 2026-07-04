@@ -23,7 +23,6 @@ router.put("/update/:userId", async (req, res) => {
     if (!user && phone) {
       user = await User.findOne({ phone: phone.trim() });
     }
-
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -37,7 +36,6 @@ router.put("/update/:userId", async (req, res) => {
         phone: phone.trim(),
         _id: { $ne: user._id },
       });
-
       if (existingPhone) {
         return res.status(400).json({
           success: false,
