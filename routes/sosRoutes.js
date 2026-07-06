@@ -4,9 +4,7 @@ const User = require("../models/User");
 const SosRoute = require("../models/SosRoutes");
 const axios = require("axios");
 const admin = require("firebase-admin");
-
 const activeAlerts = new Map();
-
 // ROUTE: POST /api/sos/trigger
 router.post("/trigger", async (req, res) => {
   try {
