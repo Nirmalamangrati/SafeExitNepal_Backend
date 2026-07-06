@@ -15,7 +15,6 @@ router.get("/:city", async (req, res) => {
 
     // 2. Correct API URL for 5-day / 3-hour forecast data
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cleanCity}&appid=${safeexitweather}&units=metric`;
-
     // Fetch both datasets simultaneously to optimize speed
     const [currentRes, forecastRes] = await Promise.all([
       axios.get(currentUrl),
