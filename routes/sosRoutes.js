@@ -45,7 +45,6 @@ router.post("/trigger", async (req, res) => {
         },
         tokens: fcmTokens,
       };
-
       await admin.messaging().sendEachForMulticast(messagePayload);
     }
 
@@ -63,7 +62,6 @@ router.post("/trigger", async (req, res) => {
         console.log(
           `[ESCALATION] 30s Timeout! ${newEvent._id} routing to Police & Admin.`,
         );
-
         await axios
           .post("https://nepalpolice.gov.np", {
             source: "SafeExit Nepal Automated System",
