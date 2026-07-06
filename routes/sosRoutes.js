@@ -88,14 +88,12 @@ router.post("/trigger", async (req, res) => {
             ` [Socket.io] Escalated SOS alert broadcasted to Admin: ${newEvent._id}`,
           );
         }
-
         await SOSEvent.findByIdAndUpdate(newEvent._id, {
           status: "ESCALATED_TO_POLICE",
         });
         activeAlerts.delete(newEvent._id.toString());
       }
     }, 30000);
-
     res.status(200).json({
       success: true,
       message: "SOS active, timeout timer running.",
