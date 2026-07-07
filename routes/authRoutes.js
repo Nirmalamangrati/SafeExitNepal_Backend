@@ -70,7 +70,6 @@ router.post("/signup", async (req, res) => {
     // 1️ OPTIMIZED REGEX SEARCH ALGORITHM (Validations)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const nepalPhoneRegex = /^(?:\+977[- ]?)?9[678]\d{8}$/; // nepalko mobile number filter algorithms
-
     if (!emailRegex.test(cleanEmail)) {
       return res.status(400).json({ error: "Invalid email format structure." });
     }
