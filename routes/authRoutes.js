@@ -122,12 +122,10 @@ router.post("/signup", async (req, res) => {
       permissions,
       fcmToken,
     });
-
     await newUser.save();
     console.log(
       `➔ [ALGORITHMIC LOG] New Secure Node Registered for: ${fullName} (Levenshtein Distance: ${distance})`,
     );
-
     return res.status(201).json({
       message: "Secure registration completed successfully!",
       telemetry: { structuralDistance: distance },
