@@ -6,9 +6,7 @@ const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const twilio = require("twilio");
 const User = require("../models/User");
-
 const JWT_SECRET = process.env.JWT_SECRET || "safeexit_super_secret_key_123";
-
 const twilioClient =
   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
