@@ -60,11 +60,9 @@ router.post("/signup", async (req, res) => {
       permissions,
       fcmToken,
     } = req.body;
-
     if (!fullName || !email || !phone || !password) {
       return res.status(400).json({ error: "All fields are required." });
     }
-
     const cleanEmail = email.toLowerCase().trim();
     const cleanName = fullName.toLowerCase().trim();
     const cleanPassword = password.trim();
