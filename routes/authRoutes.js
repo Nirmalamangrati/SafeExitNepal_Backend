@@ -11,7 +11,6 @@ const twilioClient =
   process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     : null;
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -19,7 +18,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-
 const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
