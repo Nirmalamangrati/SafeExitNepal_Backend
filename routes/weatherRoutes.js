@@ -20,7 +20,6 @@ router.get("/:city", async (req, res) => {
       axios.get(currentUrl),
       axios.get(forecastUrl),
     ]);
-
     const cur = currentRes.data;
     const weatherData =
       cur.weather && cur.weather.length > 0
