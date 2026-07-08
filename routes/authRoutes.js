@@ -244,7 +244,6 @@ router.post("/verify-otp", async (req, res) => {
         .status(400)
         .json({ error: "OTP code has expired. Please request a new one." });
     }
-
     if (user.otp.toString() !== otp.toString()) {
       return res.status(400).json({ error: "Incorrect verification code." });
     }
@@ -257,7 +256,6 @@ router.post("/verify-otp", async (req, res) => {
     user.otp = undefined;
     user.otpExpires = undefined;
     await user.save();
-
     console.log(`[VERIFY SUCCESS] User ${user.fullName} `);
     return res.status(200).json({
       token,
