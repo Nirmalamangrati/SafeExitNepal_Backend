@@ -186,7 +186,6 @@ router.post("/send-otp", loginRateLimiter, async (req, res) => {
       const formattedPhone = user.phone.startsWith("+977")
         ? user.phone
         : `+977${user.phone}`;
-
       if (twilioClient) {
         try {
           await twilioClient.messages.create({
@@ -226,7 +225,6 @@ router.post("/verify-otp", async (req, res) => {
   if (!email || !otp) {
     return res.status(400).json({ error: "Contact and OTP are required." });
   }
-
   try {
     const cleanContact = email.trim().toLowerCase();
     const user = await User.findOne({
