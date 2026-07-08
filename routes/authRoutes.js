@@ -273,7 +273,6 @@ router.post("/verify-otp", async (req, res) => {
           address: user.safetyInfo?.address || "Not Provided",
           hospital: user.safetyInfo?.hospital || "Not Provided",
         },
-
         emergencyContacts: user.emergencyContacts || [],
         permissions: user.permissions || {
           location: false,
@@ -296,7 +295,6 @@ router.post("/resend-otp", async (req, res) => {
   if (!email) {
     return res.status(400).json({ error: "Contact info is required." });
   }
-
   try {
     const cleanContact = email.trim().toLowerCase();
     const user = await User.findOne({
