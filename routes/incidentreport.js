@@ -188,7 +188,6 @@ module.exports = (io) => {
       const aiCategory =
         req.body.incidentCategory ||
         classifyIncidentPriority(req.body.description);
-
       // duplicate navayemaa matrae database object banaune
       const incidentData = {
         incidentCategory: aiCategory,
