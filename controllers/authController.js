@@ -41,10 +41,8 @@ exports.signup = async (req, res) => {
       permissions,
       fcmToken,
     });
-
     //database save garne
     await newUser.save();
-
     res.status(201).json({ message: "User registered successfully!" });
   } catch (err) {
     console.error("Signup Error:", err.message);
