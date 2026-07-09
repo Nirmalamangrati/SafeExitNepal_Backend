@@ -1,6 +1,5 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-
 exports.signup = async (req, res) => {
   try {
     // frontend bata aayeko data destructure garne
