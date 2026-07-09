@@ -10,10 +10,7 @@ router.get("/:city", async (req, res) => {
   const cleanCity = city && city.trim() !== "" ? city.trim() : "Biratnagar";
 
   try {
-    // 1. Correct API URL for current weather data
     const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${cleanCity}&appid=${safeexitweather}&units=metric`;
-
-    // 2. Correct API URL for 5-day / 3-hour forecast data
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${cleanCity}&appid=${safeexitweather}&units=metric`;
     // Fetch both datasets simultaneously to optimize speed
     const [currentRes, forecastRes] = await Promise.all([
