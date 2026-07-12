@@ -26,7 +26,6 @@ exports.signup = async (req, res) => {
 
     //password hashing garne
     const hashedPassword = await bcrypt.hash(password, 10);
-
     //sabai data milayera schema anusar user object banayera database ma save garne
     const newUser = new User({
       fullName,
