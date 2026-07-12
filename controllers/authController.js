@@ -23,7 +23,6 @@ exports.signup = async (req, res) => {
         .status(400)
         .json({ error: "Email or Phone already registered." });
     }
-
     //password hashing garne
     const hashedPassword = await bcrypt.hash(password, 10);
     //sabai data milayera schema anusar user object banayera database ma save garne
